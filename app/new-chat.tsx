@@ -2,7 +2,6 @@ import Chat, { ChatMessage } from "@/components/Chat";
 import ChatInput from "@/components/ChatInput";
 import Orb from "@/components/Orb";
 import { ThemedText } from "@/components/ThemedText";
-import VoiceListener from "@/components/VoiceListener";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -65,10 +64,6 @@ export default function NewChatScreen() {
       setMessages((prev) => [...prev, aiMessage]);
       setIsLoading(false);
     }, 1000);
-  };
-
-  const handleVoiceMessage = (uri: string) => {
-    console.log("Voice recording saved to:", uri);
   };
 
   const handleTranscriptionReceived = (text: string) => {
@@ -136,21 +131,16 @@ export default function NewChatScreen() {
             isKeyboardVisible && styles.chatSectionExpanded,
           ]}
         >
-          <Chat messages={messages} isLoading={isLoading} />
+          <Chat
+            messages={messages}
+            isLoading={isLoading}
+            onVoiceMessage={handleTranscriptionReceived}
+            isKeyboardVisible={isKeyboardVisible}
+          />
         </View>
 
         {/* Input Section */}
         <View style={styles.inputSection}>
-          {/* Voice Interface - Only show when keyboard is not visible */}
-          {!isKeyboardVisible && (
-            <View style={styles.voiceContainer}>
-              <VoiceListener
-                onRecordingComplete={handleVoiceMessage}
-                onTranscriptionReceived={handleTranscriptionReceived}
-              />
-            </View>
-          )}
-
           {/* Text Input */}
           <ChatInput
             onSendMessage={handleSendMessage}
@@ -235,9 +225,5 @@ const styles = StyleSheet.create({
     paddingTop: 15,
     borderTopWidth: 1,
     borderTopColor: "rgba(0, 0, 0, 0.1)",
-  },
-  voiceContainer: {
-    alignItems: "center",
-    paddingBottom: 15,
   },
 });

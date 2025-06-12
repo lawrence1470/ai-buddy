@@ -1,33 +1,113 @@
 import { useColorScheme } from "@/hooks/useColorScheme";
-import React, { useCallback, useRef } from "react";
+import { useVoiceRecording } from "@/hooks/useVoiceRecording";
+import { ChatMessage, ChatService } from "@/services/chatService";
+import { TTSService } from "@/services/ttsService";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { FlatList, StyleSheet, View } from "react-native";
 import { ThemedText } from "./ThemedText";
-
-export interface ChatMessage {
-  id: string;
-  text: string;
-  isUser: boolean;
-  timestamp: Date;
-  isVoice?: boolean;
-}
+import VoiceRecorder from "./VoiceRecorder";
 
 interface ChatProps {
   messages?: ChatMessage[];
   isLoading?: boolean;
+  onMessageSent?: (message: ChatMessage) => void;
+  onAIResponse?: (message: ChatMessage) => void;
+  isKeyboardVisible?: boolean;
 }
 
-export default function Chat({ messages = [], isLoading = false }: ChatProps) {
+export default function Chat({
+  messages = [],
+  isLoading = false,
+  onMessageSent,
+  onAIResponse,
+  isKeyboardVisible = false,
+}: ChatProps) {
   const flatListRef = useRef<FlatList>(null);
   const colorScheme = useColorScheme();
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(messages);
+  const [isAIResponding, setIsAIResponding] = useState(false);
+
+  const {
+    isRecording,
+    isVoiceLoading,
+    recordingDuration,
+    startRecording,
+    stopRecording,
+  } = useVoiceRecording();
 
   const isDark = colorScheme === "dark";
 
+  // Update messages when props change
+  useEffect(() => {
+    setChatMessages(messages);
+  }, [messages]);
+
   // Scroll to bottom when new messages arrive
   const scrollToBottom = useCallback(() => {
-    if (messages.length > 0) {
+    if (chatMessages.length > 0) {
       flatListRef.current?.scrollToEnd({ animated: true });
     }
-  }, [messages.length]);
+  }, [chatMessages.length]);
+
+  const handleVoiceMessage = useCallback(
+    async (transcribedText: string) => {
+      if (!transcribedText.trim()) return;
+
+      try {
+        // Create user message
+        const userMessage: ChatMessage = {
+          id: Date.now().toString(),
+          text: transcribedText,
+          isUser: true,
+          timestamp: new Date(),
+          isVoice: true,
+        };
+
+        // Add user message to chat
+        setChatMessages((prev) => [...prev, userMessage]);
+        onMessageSent?.(userMessage);
+
+        // Set AI responding state
+        setIsAIResponding(true);
+
+        // Get AI response
+        const aiResponse = await ChatService.sendMessage(transcribedText, true);
+
+        // Create AI message
+        const aiMessage: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          text: aiResponse,
+          isUser: false,
+          timestamp: new Date(),
+        };
+
+        // Add AI message to chat
+        setChatMessages((prev) => [...prev, aiMessage]);
+        onAIResponse?.(aiMessage);
+
+        // Speak AI response
+        try {
+          await TTSService.speakText(aiResponse);
+        } catch (ttsError) {
+          console.log("TTS failed, but continuing:", ttsError);
+          // Don't stop the conversation if TTS fails
+        }
+
+        setIsAIResponding(false);
+      } catch (error) {
+        console.error("Error handling voice message:", error);
+        setIsAIResponding(false);
+      }
+    },
+    [onMessageSent, onAIResponse]
+  );
+
+  const handleStopRecording = useCallback(async () => {
+    const transcribedText = await stopRecording();
+    if (transcribedText) {
+      await handleVoiceMessage(transcribedText);
+    }
+  }, [stopRecording, handleVoiceMessage]);
 
   const renderMessage = ({ item }: { item: ChatMessage }) => {
     const isUser = item.isUser;
@@ -96,14 +176,14 @@ export default function Chat({ messages = [], isLoading = false }: ChatProps) {
           { color: isDark ? "#8E8E93" : "#8E8E93" },
         ]}
       >
-        Hi! I&apos;m ready to help you. Start by recording your voice message or
-        type below.
+        Hi! I&apos;m your AI buddy. Tap the microphone to start a voice
+        conversation!
       </ThemedText>
     </View>
   );
 
   const renderLoadingIndicator = () => {
-    if (!isLoading) return null;
+    if (!isLoading && !isAIResponding) return null;
 
     return (
       <View style={[styles.messageContainer, styles.aiMessageContainer]}>
@@ -131,7 +211,7 @@ export default function Chat({ messages = [], isLoading = false }: ChatProps) {
       {/* Messages List */}
       <FlatList
         ref={flatListRef}
-        data={messages}
+        data={chatMessages}
         renderItem={renderMessage}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.chatContainer}
@@ -140,6 +220,16 @@ export default function Chat({ messages = [], isLoading = false }: ChatProps) {
         onLayout={scrollToBottom}
         ListEmptyComponent={renderEmptyState}
         ListFooterComponent={renderLoadingIndicator}
+      />
+
+      {/* Voice Recording Interface */}
+      <VoiceRecorder
+        isRecording={isRecording}
+        isVoiceLoading={isVoiceLoading}
+        recordingDuration={recordingDuration}
+        onStartRecording={startRecording}
+        onStopRecording={handleStopRecording}
+        isKeyboardVisible={isKeyboardVisible}
       />
     </View>
   );
@@ -164,6 +254,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: "center",
     lineHeight: 24,
+    marginBottom: 30,
   },
   messageContainer: {
     marginVertical: 6,
