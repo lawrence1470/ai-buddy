@@ -3,8 +3,9 @@ import ChatInput from "@/components/ChatInput";
 import { ThemedText } from "@/components/ThemedText";
 import VoiceListener from "@/components/VoiceListener";
 import { router } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -16,6 +17,30 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function NewChatScreen() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      "keyboardDidShow",
+      (e) => {
+        setIsKeyboardVisible(true);
+        setKeyboardHeight(e.endCoordinates.height);
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      "keyboardDidHide",
+      () => {
+        setIsKeyboardVisible(false);
+        setKeyboardHeight(0);
+      }
+    );
+
+    return () => {
+      keyboardDidHideListener?.remove();
+      keyboardDidShowListener?.remove();
+    };
+  }, []);
 
   const handleSendMessage = (text: string) => {
     // Add user message
@@ -83,7 +108,7 @@ export default function NewChatScreen() {
       <KeyboardAvoidingView
         style={styles.keyboardContainer}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={0}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >
         {/* Header */}
         <View style={styles.header}>
@@ -94,25 +119,34 @@ export default function NewChatScreen() {
           <View style={styles.headerRight} />
         </View>
 
-        {/* AI-buddy Section */}
-        <View style={styles.aiBuddySection}>
-          <ThemedText style={styles.aiBuddyText}>AI-buddy</ThemedText>
-        </View>
+        {/* AI-buddy Section - Hidden when keyboard is visible */}
+        {!isKeyboardVisible && (
+          <View style={styles.aiBuddySection}>
+            <ThemedText style={styles.aiBuddyText}>AI-buddy</ThemedText>
+          </View>
+        )}
 
-        {/* Chat Messages Only */}
-        <View style={styles.chatSection}>
+        {/* Chat Messages */}
+        <View
+          style={[
+            styles.chatSection,
+            isKeyboardVisible && styles.chatSectionExpanded,
+          ]}
+        >
           <Chat messages={messages} isLoading={isLoading} />
         </View>
 
         {/* Input Section */}
         <View style={styles.inputSection}>
-          {/* Voice Interface */}
-          <View style={styles.voiceContainer}>
-            <VoiceListener
-              onRecordingComplete={handleVoiceMessage}
-              onTranscriptionReceived={handleTranscriptionReceived}
-            />
-          </View>
+          {/* Voice Interface - Only show when keyboard is not visible */}
+          {!isKeyboardVisible && (
+            <View style={styles.voiceContainer}>
+              <VoiceListener
+                onRecordingComplete={handleVoiceMessage}
+                onTranscriptionReceived={handleTranscriptionReceived}
+              />
+            </View>
+          )}
 
           {/* Text Input */}
           <ChatInput
@@ -167,15 +201,18 @@ const styles = StyleSheet.create({
     width: 32,
   },
   chatSection: {
-    flex: 0.55,
+    flex: 1,
     minHeight: 200,
   },
+  chatSectionExpanded: {
+    flex: 1,
+  },
   aiBuddySection: {
-    flex: 0.2,
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 10,
+    paddingVertical: 20,
     paddingHorizontal: 30,
+    minHeight: 80,
   },
   aiBuddyText: {
     fontSize: 24,
@@ -186,10 +223,9 @@ const styles = StyleSheet.create({
     lineHeight: 30,
   },
   inputSection: {
-    flex: 0.25,
     backgroundColor: "#F8F6F0",
     paddingHorizontal: 20,
-    paddingBottom: 60,
+    paddingBottom: 20,
     paddingTop: 15,
     borderTopWidth: 1,
     borderTopColor: "rgba(0, 0, 0, 0.1)",
