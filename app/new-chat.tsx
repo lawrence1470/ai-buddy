@@ -1,0 +1,144 @@
+import Chat, { ChatMessage } from "@/components/Chat";
+import { ThemedText } from "@/components/ThemedText";
+import { router } from "expo-router";
+import React, { useState } from "react";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  StyleSheet,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+export default function NewChatScreen() {
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSendMessage = (text: string) => {
+    // Add user message
+    const userMessage: ChatMessage = {
+      id: Date.now().toString(),
+      text,
+      isUser: true,
+      timestamp: new Date(),
+    };
+    setMessages((prev) => [...prev, userMessage]);
+
+    // Simulate AI response
+    setIsLoading(true);
+    setTimeout(() => {
+      const aiMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        text: "I received your message: " + text,
+        isUser: false,
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, aiMessage]);
+      setIsLoading(false);
+    }, 1000);
+  };
+
+  const handleVoiceMessage = (uri: string) => {
+    console.log("Voice recording saved to:", uri);
+  };
+
+  const handleTranscriptionReceived = (text: string) => {
+    // Add user message with voice indicator
+    const userMessage: ChatMessage = {
+      id: Date.now().toString(),
+      text,
+      isUser: true,
+      timestamp: new Date(),
+      isVoice: true,
+    };
+    setMessages((prev) => [...prev, userMessage]);
+
+    // Simulate AI response
+    setIsLoading(true);
+    setTimeout(() => {
+      const aiMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        text: "I received your voice message: " + text,
+        isUser: false,
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, aiMessage]);
+      setIsLoading(false);
+    }, 1000);
+  };
+
+  const handleClose = () => {
+    router.back();
+  };
+
+  return (
+    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+      <KeyboardAvoidingView
+        style={styles.keyboardContainer}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={0}
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <Pressable onPress={handleClose} style={styles.closeButton}>
+            <ThemedText style={styles.closeIcon}>✕</ThemedText>
+          </Pressable>
+          <ThemedText style={styles.headerTitle}>New Chat</ThemedText>
+          <View style={styles.headerRight} />
+        </View>
+
+        {/* Chat Component */}
+        <Chat
+          messages={messages}
+          onSendMessage={handleSendMessage}
+          onVoiceMessage={handleVoiceMessage}
+          onTranscriptionReceived={handleTranscriptionReceived}
+          isLoading={isLoading}
+          showVoiceInterface={true}
+        />
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#F8F6F0",
+  },
+  keyboardContainer: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0, 0, 0, 0.1)",
+    backgroundColor: "#F8F6F0",
+  },
+  closeButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(0, 0, 0, 0.05)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  closeIcon: {
+    fontSize: 16,
+    color: "#1C1C1E",
+    fontWeight: "500",
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#1C1C1E",
+  },
+  headerRight: {
+    width: 32,
+  },
+});
