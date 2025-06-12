@@ -283,11 +283,11 @@ export default function VoiceListener({
             >
               <View style={styles.recordButtonInner}>
                 {isLoading ? (
-                  <Ionicons name="hourglass" size={40} color="white" />
+                  <Ionicons name="hourglass" size={20} color="white" />
                 ) : isRecording ? (
-                  <Ionicons name="stop" size={40} color="white" />
+                  <Ionicons name="stop" size={20} color="white" />
                 ) : (
-                  <Ionicons name="mic" size={40} color="white" />
+                  <Ionicons name="mic" size={20} color="white" />
                 )}
               </View>
             </Pressable>
@@ -295,15 +295,15 @@ export default function VoiceListener({
         </View>
 
         {/* Status text below the button */}
-        <View style={styles.statusContainer}>
-          <ThemedText style={styles.statusText}>
-            {isLoading
-              ? "Processing..."
-              : isRecording
-              ? `Recording ${formatDuration(recordingDuration)}`
-              : "Tap to record"}
-          </ThemedText>
-        </View>
+        {isRecording && (
+          <View style={styles.statusContainer}>
+            <ThemedText style={styles.statusText}>
+              {isLoading
+                ? "Processing..."
+                : `Recording ${formatDuration(recordingDuration)}`}
+            </ThemedText>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -311,14 +311,14 @@ export default function VoiceListener({
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
+    padding: 10,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "transparent",
   },
   recordingContainer: {
     alignItems: "center",
-    gap: 20,
+    gap: 10,
   },
   animationContainer: {
     position: "relative",
@@ -327,28 +327,28 @@ const styles = StyleSheet.create({
   },
   ripple: {
     position: "absolute",
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     borderWidth: 2,
     borderColor: "rgba(255, 59, 48, 0.3)",
   },
   recordButton: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    elevation: 8,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    elevation: 4,
     shadowColor: "rgba(0, 0, 0, 0.25)",
-    shadowOffset: { width: 0, height: 8 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
-    shadowRadius: 16,
+    shadowRadius: 8,
   },
   recordButtonPressable: {
     width: "100%",
     height: "100%",
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: 60,
+    borderRadius: 30,
   },
   recordButtonInner: {
     width: "100%",
@@ -360,7 +360,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   statusText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "500",
     color: "#1C1C1E",
     textAlign: "center",

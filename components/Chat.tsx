@@ -1,9 +1,7 @@
 import { useColorScheme } from "@/hooks/useColorScheme";
 import React, { useCallback, useRef } from "react";
 import { FlatList, StyleSheet, View } from "react-native";
-import ChatInput from "./ChatInput";
 import { ThemedText } from "./ThemedText";
-import VoiceListener from "./VoiceListener";
 
 export interface ChatMessage {
   id: string;
@@ -15,21 +13,10 @@ export interface ChatMessage {
 
 interface ChatProps {
   messages?: ChatMessage[];
-  onSendMessage?: (message: string) => void;
-  onVoiceMessage?: (uri: string) => void;
-  onTranscriptionReceived?: (text: string) => void;
   isLoading?: boolean;
-  showVoiceInterface?: boolean;
 }
 
-export default function Chat({
-  messages = [],
-  onSendMessage,
-  onVoiceMessage,
-  onTranscriptionReceived,
-  isLoading = false,
-  showVoiceInterface = true,
-}: ChatProps) {
+export default function Chat({ messages = [], isLoading = false }: ChatProps) {
   const flatListRef = useRef<FlatList>(null);
   const colorScheme = useColorScheme();
 
@@ -41,11 +28,6 @@ export default function Chat({
       flatListRef.current?.scrollToEnd({ animated: true });
     }
   }, [messages.length]);
-
-  const handleVoicePress = useCallback(() => {
-    // This will be handled by the VoiceListener component
-    console.log("Voice button pressed");
-  }, []);
 
   const renderMessage = ({ item }: { item: ChatMessage }) => {
     const isUser = item.isUser;
@@ -159,35 +141,6 @@ export default function Chat({
         ListEmptyComponent={renderEmptyState}
         ListFooterComponent={renderLoadingIndicator}
       />
-
-      {/* Input Section */}
-      <View
-        style={[
-          styles.inputSection,
-          {
-            backgroundColor: isDark ? "#1C1C1E" : "#F8F6F0",
-            borderTopColor: isDark ? "#2C2C2E" : "rgba(0, 0, 0, 0.1)",
-          },
-        ]}
-      >
-        {/* Voice Interface */}
-        {showVoiceInterface && (
-          <View style={styles.voiceContainer}>
-            <VoiceListener
-              onRecordingComplete={onVoiceMessage}
-              onTranscriptionReceived={onTranscriptionReceived}
-            />
-          </View>
-        )}
-
-        {/* Text Input */}
-        <ChatInput
-          onSendMessage={onSendMessage}
-          onVoicePress={handleVoicePress}
-          isLoading={isLoading}
-          showVoiceButton={false} // We're using the VoiceListener component instead
-        />
-      </View>
     </View>
   );
 }
@@ -284,15 +237,5 @@ const styles = StyleSheet.create({
   },
   typingDot3: {
     opacity: 0.8,
-  },
-  inputSection: {
-    paddingHorizontal: 20,
-    paddingBottom: 24,
-    paddingTop: 20,
-    borderTopWidth: 1,
-  },
-  voiceContainer: {
-    marginBottom: 16,
-    alignItems: "center",
   },
 });

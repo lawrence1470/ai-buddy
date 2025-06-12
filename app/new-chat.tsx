@@ -1,5 +1,7 @@
 import Chat, { ChatMessage } from "@/components/Chat";
+import ChatInput from "@/components/ChatInput";
 import { ThemedText } from "@/components/ThemedText";
+import VoiceListener from "@/components/VoiceListener";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -68,6 +70,10 @@ export default function NewChatScreen() {
     }, 1000);
   };
 
+  const handleVoicePress = () => {
+    console.log("Voice button pressed");
+  };
+
   const handleClose = () => {
     router.back();
   };
@@ -88,15 +94,34 @@ export default function NewChatScreen() {
           <View style={styles.headerRight} />
         </View>
 
-        {/* Chat Component */}
-        <Chat
-          messages={messages}
-          onSendMessage={handleSendMessage}
-          onVoiceMessage={handleVoiceMessage}
-          onTranscriptionReceived={handleTranscriptionReceived}
-          isLoading={isLoading}
-          showVoiceInterface={true}
-        />
+        {/* AI-buddy Section */}
+        <View style={styles.aiBuddySection}>
+          <ThemedText style={styles.aiBuddyText}>AI-buddy</ThemedText>
+        </View>
+
+        {/* Chat Messages Only */}
+        <View style={styles.chatSection}>
+          <Chat messages={messages} isLoading={isLoading} />
+        </View>
+
+        {/* Input Section */}
+        <View style={styles.inputSection}>
+          {/* Voice Interface */}
+          <View style={styles.voiceContainer}>
+            <VoiceListener
+              onRecordingComplete={handleVoiceMessage}
+              onTranscriptionReceived={handleTranscriptionReceived}
+            />
+          </View>
+
+          {/* Text Input */}
+          <ChatInput
+            onSendMessage={handleSendMessage}
+            onVoicePress={handleVoicePress}
+            isLoading={isLoading}
+            showVoiceButton={false}
+          />
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -140,5 +165,37 @@ const styles = StyleSheet.create({
   },
   headerRight: {
     width: 32,
+  },
+  chatSection: {
+    flex: 0.55,
+    minHeight: 200,
+  },
+  aiBuddySection: {
+    flex: 0.2,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 30,
+  },
+  aiBuddyText: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#667EEA",
+    textAlign: "center",
+    letterSpacing: 1,
+    lineHeight: 30,
+  },
+  inputSection: {
+    flex: 0.25,
+    backgroundColor: "#F8F6F0",
+    paddingHorizontal: 20,
+    paddingBottom: 60,
+    paddingTop: 15,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(0, 0, 0, 0.1)",
+  },
+  voiceContainer: {
+    alignItems: "center",
+    paddingBottom: 15,
   },
 });
