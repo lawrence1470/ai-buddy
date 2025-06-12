@@ -1,5 +1,6 @@
 import Chat, { ChatMessage } from "@/components/Chat";
 import ChatInput from "@/components/ChatInput";
+import Orb from "@/components/Orb";
 import { ThemedText } from "@/components/ThemedText";
 import VoiceListener from "@/components/VoiceListener";
 import { router } from "expo-router";
@@ -122,7 +123,9 @@ export default function NewChatScreen() {
         {/* AI-buddy Section - Hidden when keyboard is visible */}
         {!isKeyboardVisible && (
           <View style={styles.aiBuddySection}>
-            <ThemedText style={styles.aiBuddyText}>AI-buddy</ThemedText>
+            <View style={styles.orbContainer}>
+              <Orb size={120} color="#667EEA" animated={true} />
+            </View>
           </View>
         )}
 
@@ -213,6 +216,9 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     paddingHorizontal: 30,
     minHeight: 80,
+  },
+  orbContainer: {
+    marginBottom: 10,
   },
   aiBuddyText: {
     fontSize: 24,
