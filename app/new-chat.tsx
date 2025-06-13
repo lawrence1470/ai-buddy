@@ -1,7 +1,9 @@
-import Chat, { ChatMessage } from "@/components/Chat";
+import Chat from "@/components/Chat";
 import ChatInput from "@/components/ChatInput";
 import Orb from "@/components/Orb";
 import { ThemedText } from "@/components/ThemedText";
+import { useAISpeaking } from "@/hooks/useAISpeaking";
+import { ChatMessage } from "@/services/chatService";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -19,6 +21,7 @@ export default function NewChatScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const isSpeaking = useAISpeaking();
 
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
@@ -119,7 +122,12 @@ export default function NewChatScreen() {
         {!isKeyboardVisible && (
           <View style={styles.aiBuddySection}>
             <View style={styles.orbContainer}>
-              <Orb size={120} color="#667EEA" animated={true} />
+              <Orb
+                size={120}
+                color="#667EEA"
+                animated={true}
+                isSpeaking={isSpeaking}
+              />
             </View>
           </View>
         )}
@@ -134,7 +142,8 @@ export default function NewChatScreen() {
           <Chat
             messages={messages}
             isLoading={isLoading}
-            onVoiceMessage={handleTranscriptionReceived}
+            onMessageSent={(message) => console.log("Message sent:", message)}
+            onAIResponse={(message) => console.log("AI response:", message)}
             isKeyboardVisible={isKeyboardVisible}
           />
         </View>

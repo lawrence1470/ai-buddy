@@ -7,6 +7,9 @@ import { FlatList, StyleSheet, View } from "react-native";
 import { ThemedText } from "./ThemedText";
 import VoiceRecorder from "./VoiceRecorder";
 
+// Re-export ChatMessage for convenience
+export type { ChatMessage } from "@/services/chatService";
+
 interface ChatProps {
   messages?: ChatMessage[];
   isLoading?: boolean;

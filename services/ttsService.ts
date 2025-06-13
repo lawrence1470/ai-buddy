@@ -1,10 +1,33 @@
 import { Audio } from "expo-av";
 
+type SpeakingStateCallback = (isSpeaking: boolean) => void;
+
 export class TTSService {
   private static sound: Audio.Sound | null = null;
+  private static speakingStateCallbacks: Set<SpeakingStateCallback> = new Set();
+
+  static addSpeakingStateListener(callback: SpeakingStateCallback): () => void {
+    this.speakingStateCallbacks.add(callback);
+    return () => {
+      this.speakingStateCallbacks.delete(callback);
+    };
+  }
+
+  private static notifySpeakingStateChange(isSpeaking: boolean): void {
+    this.speakingStateCallbacks.forEach((callback) => {
+      try {
+        callback(isSpeaking);
+      } catch (error) {
+        console.error("Error in speaking state callback:", error);
+      }
+    });
+  }
 
   static async speakText(text: string): Promise<void> {
     try {
+      // Notify that speaking is starting
+      this.notifySpeakingStateChange(true);
+
       // Clean up previous sound
       if (this.sound) {
         await this.sound.unloadAsync();
@@ -64,22 +87,30 @@ export class TTSService {
               if (status.isLoaded && status.didJustFinish) {
                 sound.unloadAsync();
                 this.sound = null;
+                // Notify that speaking has stopped
+                this.notifySpeakingStateChange(false);
               }
             });
 
             resolve();
           } catch (error) {
             console.error("Error playing TTS audio:", error);
+            // Notify that speaking has stopped due to error
+            this.notifySpeakingStateChange(false);
             reject(error);
           }
         };
 
         reader.onerror = () => {
+          // Notify that speaking has stopped due to error
+          this.notifySpeakingStateChange(false);
           reject(new Error("Failed to convert audio blob"));
         };
       });
     } catch (error) {
       console.error("TTS error:", error);
+      // Notify that speaking has stopped due to error
+      this.notifySpeakingStateChange(false);
       // Don't show alert for TTS errors, just log them
       throw error;
     }
@@ -91,6 +122,8 @@ export class TTSService {
         await this.sound.stopAsync();
         await this.sound.unloadAsync();
         this.sound = null;
+        // Notify that speaking has stopped
+        this.notifySpeakingStateChange(false);
       }
     } catch (error) {
       console.error("Error stopping TTS:", error);
