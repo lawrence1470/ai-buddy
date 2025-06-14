@@ -1,8 +1,11 @@
+import AuthModal from "@/components/AuthModal";
 import Orb from "@/components/Orb";
 import { ThemedText } from "@/components/ThemedText";
 import { useAISpeaking } from "@/hooks/useAISpeaking";
+import { useAuth } from "@/hooks/useAuth";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { router } from "expo-router";
+import { useState } from "react";
 import {
   Pressable,
   SafeAreaView,
@@ -14,15 +17,29 @@ import {
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const isSpeaking = useAISpeaking();
+  const { isAuthenticated, user, signOut } = useAuth();
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const isDark = colorScheme === "dark";
 
   const handleNewChat = () => {
+    if (!isAuthenticated) {
+      setShowAuthModal(true);
+      return;
+    }
     router.push("/new-chat");
   };
 
   const handleTalkWithAI = () => {
+    if (!isAuthenticated) {
+      setShowAuthModal(true);
+      return;
+    }
     router.push("/new-chat");
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
   };
 
   return (
@@ -55,7 +72,9 @@ export default function HomeScreen() {
                     { color: isDark ? "#FFFFFF" : "#1C1C1E" },
                   ]}
                 >
-                  Hello there
+                  {isAuthenticated
+                    ? `Hello ${user?.email?.split("@")[0] || "there"}`
+                    : "Hello there"}
                 </ThemedText>
                 <ThemedText
                   style={[
@@ -63,17 +82,41 @@ export default function HomeScreen() {
                     { color: isDark ? "#8E8E93" : "#8E8E93" },
                   ]}
                 >
-                  Make your day easy with AI
+                  {isAuthenticated
+                    ? "Make your day easy with AI"
+                    : "Sign in to get started"}
                 </ThemedText>
               </View>
             </View>
+            {/* Sign In/Out Button */}
+            {isAuthenticated ? (
+              <Pressable
+                style={[styles.authButton, styles.signOutButton]}
+                onPress={handleSignOut}
+              >
+                <ThemedText style={styles.signOutButtonText}>
+                  Sign Out
+                </ThemedText>
+              </Pressable>
+            ) : (
+              <Pressable
+                style={[styles.authButton, styles.signInButton]}
+                onPress={() => setShowAuthModal(true)}
+              >
+                <ThemedText style={styles.signInButtonText}>Sign In</ThemedText>
+              </Pressable>
+            )}
           </View>
         </View>
 
         {/* Action Cards */}
         <View style={styles.actionCards}>
           <Pressable
-            style={[styles.card, styles.newChatCard]}
+            style={[
+              styles.card,
+              styles.newChatCard,
+              !isAuthenticated && styles.cardDisabled,
+            ]}
             onPress={handleNewChat}
           >
             <View style={styles.cardContent}>
@@ -83,95 +126,125 @@ export default function HomeScreen() {
               </View>
             </View>
             <ThemedText style={styles.cardTitle}>New chat</ThemedText>
+            {!isAuthenticated && (
+              <ThemedText style={styles.cardDisabledText}>
+                Sign in required
+              </ThemedText>
+            )}
           </Pressable>
 
           <Pressable
-            style={[styles.card, styles.talkCard]}
+            style={[
+              styles.card,
+              styles.talkCard,
+              !isAuthenticated && styles.cardDisabled,
+            ]}
             onPress={handleTalkWithAI}
           >
             <ThemedText style={styles.cardTitle}>Talk with AI Buddy</ThemedText>
             <ThemedText style={styles.cardSubtitle}>
-              Let&apos;s try it now
+              {isAuthenticated
+                ? "Let's try it now"
+                : "Sign in to start talking"}
             </ThemedText>
           </Pressable>
         </View>
 
         {/* Search by Voice */}
-        <Pressable style={styles.searchCard}>
+        <Pressable
+          style={[styles.searchCard, !isAuthenticated && styles.cardDisabled]}
+          onPress={() => {
+            if (!isAuthenticated) {
+              setShowAuthModal(true);
+            }
+          }}
+        >
           <View style={styles.searchContent}>
             <ThemedText style={styles.searchIcon}>🔍</ThemedText>
-            <ThemedText style={styles.searchText}>Search by voice</ThemedText>
+            <ThemedText style={styles.searchText}>
+              {isAuthenticated
+                ? "Search by voice"
+                : "Sign in to search by voice"}
+            </ThemedText>
           </View>
         </Pressable>
 
-        {/* Recent Sessions */}
-        <View style={styles.recentSection}>
-          <View style={styles.recentHeader}>
-            <ThemedText
-              style={[
-                styles.recentTitle,
-                { color: isDark ? "#FFFFFF" : "#1C1C1E" },
-              ]}
-            >
-              Recent Sessions
-            </ThemedText>
-            <Pressable>
-              <ThemedText style={styles.seeAllText}>See All</ThemedText>
-            </Pressable>
+        {/* Recent Sessions - Only show if authenticated */}
+        {isAuthenticated && (
+          <View style={styles.recentSection}>
+            <View style={styles.recentHeader}>
+              <ThemedText
+                style={[
+                  styles.recentTitle,
+                  { color: isDark ? "#FFFFFF" : "#1C1C1E" },
+                ]}
+              >
+                Recent Sessions
+              </ThemedText>
+              <Pressable>
+                <ThemedText style={styles.seeAllText}>See All</ThemedText>
+              </Pressable>
+            </View>
+
+            <View style={styles.recentList}>
+              <Pressable style={styles.recentItem}>
+                <View style={styles.recentAvatar}>
+                  <ThemedText style={styles.recentAvatarText}>💬</ThemedText>
+                </View>
+                <ThemedText
+                  style={[
+                    styles.recentItemText,
+                    { color: isDark ? "#FFFFFF" : "#1C1C1E" },
+                  ]}
+                >
+                  What is artificial intelligence?
+                </ThemedText>
+                <ThemedText style={styles.recentMenu}>⋯</ThemedText>
+              </Pressable>
+
+              <Pressable style={styles.recentItem}>
+                <View
+                  style={[styles.recentAvatar, { backgroundColor: "#2C2C2E" }]}
+                >
+                  <ThemedText style={styles.recentAvatarText}>🎤</ThemedText>
+                </View>
+                <ThemedText
+                  style={[
+                    styles.recentItemText,
+                    { color: isDark ? "#FFFFFF" : "#1C1C1E" },
+                  ]}
+                >
+                  Voice recognition demo
+                </ThemedText>
+                <ThemedText style={styles.recentMenu}>⋯</ThemedText>
+              </Pressable>
+
+              <Pressable style={styles.recentItem}>
+                <View
+                  style={[styles.recentAvatar, { backgroundColor: "#F4E1A1" }]}
+                >
+                  <ThemedText style={styles.recentAvatarText}>📝</ThemedText>
+                </View>
+                <ThemedText
+                  style={[
+                    styles.recentItemText,
+                    { color: isDark ? "#FFFFFF" : "#1C1C1E" },
+                  ]}
+                >
+                  Transcription analysis
+                </ThemedText>
+                <ThemedText style={styles.recentMenu}>⋯</ThemedText>
+              </Pressable>
+            </View>
           </View>
-
-          <View style={styles.recentList}>
-            <Pressable style={styles.recentItem}>
-              <View style={styles.recentAvatar}>
-                <ThemedText style={styles.recentAvatarText}>💬</ThemedText>
-              </View>
-              <ThemedText
-                style={[
-                  styles.recentItemText,
-                  { color: isDark ? "#FFFFFF" : "#1C1C1E" },
-                ]}
-              >
-                What is artificial intelligence?
-              </ThemedText>
-              <ThemedText style={styles.recentMenu}>⋯</ThemedText>
-            </Pressable>
-
-            <Pressable style={styles.recentItem}>
-              <View
-                style={[styles.recentAvatar, { backgroundColor: "#2C2C2E" }]}
-              >
-                <ThemedText style={styles.recentAvatarText}>🎤</ThemedText>
-              </View>
-              <ThemedText
-                style={[
-                  styles.recentItemText,
-                  { color: isDark ? "#FFFFFF" : "#1C1C1E" },
-                ]}
-              >
-                Voice recognition demo
-              </ThemedText>
-              <ThemedText style={styles.recentMenu}>⋯</ThemedText>
-            </Pressable>
-
-            <Pressable style={styles.recentItem}>
-              <View
-                style={[styles.recentAvatar, { backgroundColor: "#F4E1A1" }]}
-              >
-                <ThemedText style={styles.recentAvatarText}>📝</ThemedText>
-              </View>
-              <ThemedText
-                style={[
-                  styles.recentItemText,
-                  { color: isDark ? "#FFFFFF" : "#1C1C1E" },
-                ]}
-              >
-                Transcription analysis
-              </ThemedText>
-              <ThemedText style={styles.recentMenu}>⋯</ThemedText>
-            </Pressable>
-          </View>
-        </View>
+        )}
       </ScrollView>
+
+      {/* Auth Modal */}
+      <AuthModal
+        visible={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -198,7 +271,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   avatarContainer: {
-    marginRight: 15,
+    marginRight: 12,
   },
   headerText: {
     flex: 1,
@@ -211,60 +284,111 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
   },
+  // Authentication Button Styles
+  authButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    minWidth: 80,
+    alignItems: "center",
+  },
+  signInButton: {
+    backgroundColor: "#667EEA",
+  },
+  signOutButton: {
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: "#8E8E93",
+  },
+  signInButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  signOutButtonText: {
+    color: "#8E8E93",
+    fontSize: 14,
+    fontWeight: "600",
+  },
   actionCards: {
     flexDirection: "row",
     paddingHorizontal: 20,
     marginBottom: 20,
-    gap: 15,
+    gap: 12,
   },
   card: {
     flex: 1,
+    backgroundColor: "#FFFFFF",
     borderRadius: 16,
-    padding: 20,
-    minHeight: 120,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  cardDisabled: {
+    opacity: 0.6,
+  },
+  cardDisabledText: {
+    fontSize: 12,
+    color: "#8E8E93",
+    marginTop: 4,
+    fontStyle: "italic",
   },
   newChatCard: {
-    backgroundColor: "#F4E1A1",
+    backgroundColor: "#F8F6F0",
   },
   talkCard: {
-    backgroundColor: "#C8D5F7",
+    backgroundColor: "#667EEA",
   },
   cardContent: {
     flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 10,
+    marginBottom: 8,
   },
   cardIcon: {
     fontSize: 24,
   },
   newBadge: {
-    backgroundColor: "#FF4444",
-    borderRadius: 10,
+    backgroundColor: "#667EEA",
     paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingVertical: 2,
+    borderRadius: 12,
   },
   newBadgeText: {
     color: "#FFFFFF",
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: "bold",
   },
   cardTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
-    color: "#1C1C1E",
+    color: "#FFFFFF",
   },
   cardSubtitle: {
     fontSize: 14,
-    color: "#666666",
+    color: "rgba(255, 255, 255, 0.8)",
     marginTop: 4,
   },
   searchCard: {
     marginHorizontal: 20,
-    backgroundColor: "#2C2C2E",
+    backgroundColor: "#FFFFFF",
     borderRadius: 16,
-    padding: 20,
+    padding: 16,
     marginBottom: 30,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   searchContent: {
     flexDirection: "row",
@@ -275,13 +399,11 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   searchText: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "500",
+    fontSize: 16,
+    color: "#1C1C1E",
   },
   recentSection: {
     paddingHorizontal: 20,
-    paddingBottom: 30,
   },
   recentHeader: {
     flexDirection: "row",
@@ -294,9 +416,8 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   seeAllText: {
-    color: "#667EEA",
     fontSize: 16,
-    fontWeight: "500",
+    color: "#667EEA",
   },
   recentList: {
     gap: 12,
@@ -304,34 +425,23 @@ const styles = StyleSheet.create({
   recentItem: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    paddingVertical: 8,
   },
   recentAvatar: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#E0E0E0",
+    backgroundColor: "#667EEA",
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
   },
   recentAvatarText: {
-    fontSize: 18,
+    fontSize: 16,
   },
   recentItemText: {
     flex: 1,
     fontSize: 16,
-    fontWeight: "500",
   },
   recentMenu: {
     fontSize: 20,

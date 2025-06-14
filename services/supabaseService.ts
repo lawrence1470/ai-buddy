@@ -103,6 +103,38 @@ export const authService = {
   onAuthStateChange(callback: (event: string, session: any) => void) {
     return supabase.auth.onAuthStateChange(callback);
   },
+
+  // Sign in with OTP (email magic link)
+  async signInWithOTP(email: string) {
+    try {
+      const { data, error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          // You can customize the email template and redirect URL here
+          emailRedirectTo: undefined, // Will use default
+        },
+      });
+      return { data, error };
+    } catch (error) {
+      console.error("Sign in with OTP error:", error);
+      return { data: null, error };
+    }
+  },
+
+  // Verify OTP code
+  async verifyOTP(email: string, token: string) {
+    try {
+      const { data, error } = await supabase.auth.verifyOtp({
+        email,
+        token,
+        type: "email",
+      });
+      return { data, error };
+    } catch (error) {
+      console.error("Verify OTP error:", error);
+      return { data: null, error };
+    }
+  },
 };
 
 // Database helper functions

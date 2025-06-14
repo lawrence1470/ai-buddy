@@ -158,6 +158,63 @@ export function useAuth() {
     }
   };
 
+  const signInWithOTP = async (email: string) => {
+    setAuthState((prev) => ({ ...prev, loading: true, error: null }));
+
+    try {
+      const { data, error } = await authService.signInWithOTP(email);
+      if (error) {
+        setAuthState((prev) => ({
+          ...prev,
+          error: "Failed to send OTP",
+          loading: false,
+        }));
+        return { success: false, error: "Failed to send OTP" };
+      }
+
+      setAuthState((prev) => ({ ...prev, loading: false }));
+      return { success: true, data };
+    } catch (error) {
+      setAuthState((prev) => ({
+        ...prev,
+        error: "Failed to send OTP",
+        loading: false,
+      }));
+      return { success: false, error: "Failed to send OTP" };
+    }
+  };
+
+  const verifyOTP = async (email: string, token: string) => {
+    setAuthState((prev) => ({ ...prev, loading: true, error: null }));
+
+    try {
+      const { data, error } = await authService.verifyOTP(email, token);
+      if (error || !data) {
+        setAuthState((prev) => ({
+          ...prev,
+          error: "Invalid OTP code",
+          loading: false,
+        }));
+        return { success: false, error: "Invalid OTP code" };
+      }
+
+      setAuthState((prev) => ({
+        ...prev,
+        session: data.session,
+        user: data.user,
+        loading: false,
+      }));
+      return { success: true, data };
+    } catch (error) {
+      setAuthState((prev) => ({
+        ...prev,
+        error: "Invalid OTP code",
+        loading: false,
+      }));
+      return { success: false, error: "Invalid OTP code" };
+    }
+  };
+
   return {
     // State
     user: authState.user,
@@ -170,5 +227,7 @@ export function useAuth() {
     signUp,
     signIn,
     signOut,
+    signInWithOTP,
+    verifyOTP,
   };
 }
