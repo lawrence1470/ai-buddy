@@ -1,0 +1,119 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# AI Buddy - Voice Chat App Rules
+
+## Project Overview
+This is a modern React Native app built with Expo that allows voice conversations with an AI assistant. The AI can both understand speech and respond with its own voice using OpenAI APIs.
+
+## Key Features
+- Voice Recording with visual feedback
+- Speech-to-Text using OpenAI Whisper
+- AI Conversations powered by GPT-3.5 Turbo
+- Text-to-Speech with natural voice synthesis
+- Animated Orb component with speaking animations
+- Modern UI with dark mode support
+
+## Architecture & File Structure
+
+### Services (`/services`)
+- `audioService.ts` - Handles audio recording, permissions, and transcription
+- `chatService.ts` - Manages AI conversations and message history
+- `ttsService.ts` - Converts AI responses to speech with speaking state callbacks
+
+### Components (`/components`)
+- `Chat.tsx` - Main chat interface and message rendering
+- `VoiceRecorder.tsx` - Voice recording UI with animations
+- `Orb.tsx` - Animated orb with speaking animations (key visual component)
+- `ThemedText.tsx` - Themed text component
+
+### Hooks (`/hooks`)
+- `useVoiceRecording.ts` - Custom hook for voice recording logic
+- `useAISpeaking.ts` - Custom hook to track when AI is speaking
+- `useColorScheme.ts` - Theme management hook
+
+### Screens
+- `app/(tabs)/index.tsx` - Home dashboard with Orb and navigation cards
+- `app/new-chat.tsx` - Full chat interface with voice recording
+
+## Key Technologies & APIs
+- OpenAI Whisper for speech-to-text transcription
+- OpenAI GPT-3.5 Turbo for conversational AI
+- OpenAI TTS for text-to-speech synthesis
+- React Native Reanimated for smooth animations
+- Expo AV for audio recording and playback
+
+## Environment Variables
+- `EXPO_PUBLIC_OPENAI_API_KEY` - Required OpenAI API key
+
+## Code Conventions
+
+### Orb Component Usage
+- The Orb component is the central visual element
+- Use `isSpeaking` prop to trigger speaking animations
+- Home screen: smaller Orb (60px) in header
+- Chat screen: larger Orb (120px) as main focus
+- Always import `useAISpeaking` hook when using Orb
+
+### TTS Integration
+- Use `TTSService.speakText()` for AI voice responses
+- TTS service automatically notifies speaking state changes
+- Speaking animations are handled automatically via `useAISpeaking` hook
+
+### Voice Recording
+- Use `useVoiceRecording` hook for recording functionality
+- Always handle permissions gracefully
+- Provide visual feedback during recording
+
+### Styling Patterns
+- Use `useColorScheme` for dark/light mode support
+- Background colors: `#F8F6F0` (light), `#000000` (dark)
+- Primary color: `#667EEA`
+- Use React Native StyleSheet for all styling
+- Implement responsive design with Flexbox
+
+### Error Handling
+- Handle permission errors gracefully
+- Provide fallback responses when APIs are unavailable
+- Use try-catch blocks for all async operations
+- Log errors appropriately without exposing sensitive data
+
+### Animation Guidelines
+- Use React Native Reanimated for performance
+- Orb animations should be smooth and responsive
+- Speaking animations: faster pulsing, glow effects, wave patterns
+- Idle animations: gentle pulsing and rotation
+
+## Development Guidelines
+- Always test voice features on physical devices
+- Ensure proper audio permissions are requested
+- Test both iOS and Android platforms
+- Maintain clean separation between services and UI components
+- Use TypeScript interfaces for all props and data structures
+
+## Common Patterns
+```typescript
+// Using the speaking Orb
+const isSpeaking = useAISpeaking();
+<Orb size={120} color="#667EEA" animated={true} isSpeaking={isSpeaking} />
+
+// Voice recording integration
+const { isRecording, startRecording, stopRecording } = useVoiceRecording();
+
+// TTS with automatic speaking state
+await TTSService.speakText(message.content);
+```
+
+## File Naming
+- Use camelCase for component files (e.g., `VoiceRecorder.tsx`)
+- Use camelCase for service files (e.g., `ttsService.ts`)
+- Use camelCase for hook files (e.g., `useAISpeaking.ts`)
+
+## When Adding New Features
+- Consider how they integrate with the Orb speaking animations
+- Ensure proper error handling for audio/API failures
+- Test voice features thoroughly on devices
+- Maintain the clean service-component separation
+- Update speaking state management if needed
