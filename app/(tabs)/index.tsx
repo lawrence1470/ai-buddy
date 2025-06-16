@@ -1,9 +1,9 @@
-import AuthModal from "@/components/AuthModal";
 import Orb from "@/components/Orb";
+import PhoneAuthModal from "@/components/PhoneAuthModal";
 import { ThemedText } from "@/components/ThemedText";
 import { useAISpeaking } from "@/hooks/useAISpeaking";
-import { useAuth } from "@/hooks/useAuth";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { useAuth, useUser } from "@clerk/clerk-expo";
 import { router } from "expo-router";
 import { useState } from "react";
 import {
@@ -17,13 +17,14 @@ import {
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const isSpeaking = useAISpeaking();
-  const { isAuthenticated, user, signOut } = useAuth();
+  const { isSignedIn, signOut } = useAuth();
+  const { user } = useUser();
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   const isDark = colorScheme === "dark";
 
   const handleNewChat = () => {
-    if (!isAuthenticated) {
+    if (!isSignedIn) {
       setShowAuthModal(true);
       return;
     }
@@ -31,7 +32,7 @@ export default function HomeScreen() {
   };
 
   const handleTalkWithAI = () => {
-    if (!isAuthenticated) {
+    if (!isSignedIn) {
       setShowAuthModal(true);
       return;
     }
@@ -72,8 +73,15 @@ export default function HomeScreen() {
                     { color: isDark ? "#FFFFFF" : "#1C1C1E" },
                   ]}
                 >
-                  {isAuthenticated
-                    ? `Hello ${user?.email?.split("@")[0] || "there"}`
+                  {isSignedIn
+                    ? `Hello ${
+                        user?.firstName ||
+                        user?.phoneNumbers?.[0]?.phoneNumber?.replace(
+                          /^\+1/,
+                          ""
+                        ) ||
+                        "there"
+                      }`
                     : "Hello there"}
                 </ThemedText>
                 <ThemedText
@@ -82,14 +90,14 @@ export default function HomeScreen() {
                     { color: isDark ? "#8E8E93" : "#8E8E93" },
                   ]}
                 >
-                  {isAuthenticated
+                  {isSignedIn
                     ? "Make your day easy with AI"
                     : "Sign in to get started"}
                 </ThemedText>
               </View>
             </View>
             {/* Sign In/Out Button */}
-            {isAuthenticated ? (
+            {isSignedIn ? (
               <Pressable
                 style={[styles.authButton, styles.signOutButton]}
                 onPress={handleSignOut}
@@ -115,7 +123,7 @@ export default function HomeScreen() {
             style={[
               styles.card,
               styles.newChatCard,
-              !isAuthenticated && styles.cardDisabled,
+              !isSignedIn && styles.cardDisabled,
             ]}
             onPress={handleNewChat}
           >
@@ -125,8 +133,10 @@ export default function HomeScreen() {
                 <ThemedText style={styles.newBadgeText}>New</ThemedText>
               </View>
             </View>
-            <ThemedText style={styles.cardTitle}>New chat</ThemedText>
-            {!isAuthenticated && (
+            <ThemedText style={[styles.cardTitle, { color: "#1C1C1E" }]}>
+              New chat
+            </ThemedText>
+            {!isSignedIn && (
               <ThemedText style={styles.cardDisabledText}>
                 Sign in required
               </ThemedText>
@@ -137,24 +147,22 @@ export default function HomeScreen() {
             style={[
               styles.card,
               styles.talkCard,
-              !isAuthenticated && styles.cardDisabled,
+              !isSignedIn && styles.cardDisabled,
             ]}
             onPress={handleTalkWithAI}
           >
             <ThemedText style={styles.cardTitle}>Talk with AI Buddy</ThemedText>
             <ThemedText style={styles.cardSubtitle}>
-              {isAuthenticated
-                ? "Let's try it now"
-                : "Sign in to start talking"}
+              {isSignedIn ? "Let's try it now" : "Sign in to start talking"}
             </ThemedText>
           </Pressable>
         </View>
 
         {/* Search by Voice */}
         <Pressable
-          style={[styles.searchCard, !isAuthenticated && styles.cardDisabled]}
+          style={[styles.searchCard, !isSignedIn && styles.cardDisabled]}
           onPress={() => {
-            if (!isAuthenticated) {
+            if (!isSignedIn) {
               setShowAuthModal(true);
             }
           }}
@@ -162,15 +170,13 @@ export default function HomeScreen() {
           <View style={styles.searchContent}>
             <ThemedText style={styles.searchIcon}>🔍</ThemedText>
             <ThemedText style={styles.searchText}>
-              {isAuthenticated
-                ? "Search by voice"
-                : "Sign in to search by voice"}
+              {isSignedIn ? "Search by voice" : "Sign in to search by voice"}
             </ThemedText>
           </View>
         </Pressable>
 
         {/* Recent Sessions - Only show if authenticated */}
-        {isAuthenticated && (
+        {isSignedIn && (
           <View style={styles.recentSection}>
             <View style={styles.recentHeader}>
               <ThemedText
@@ -193,45 +199,11 @@ export default function HomeScreen() {
                 </View>
                 <ThemedText
                   style={[
-                    styles.recentItemText,
+                    styles.recentText,
                     { color: isDark ? "#FFFFFF" : "#1C1C1E" },
                   ]}
                 >
-                  What is artificial intelligence?
-                </ThemedText>
-                <ThemedText style={styles.recentMenu}>⋯</ThemedText>
-              </Pressable>
-
-              <Pressable style={styles.recentItem}>
-                <View
-                  style={[styles.recentAvatar, { backgroundColor: "#2C2C2E" }]}
-                >
-                  <ThemedText style={styles.recentAvatarText}>🎤</ThemedText>
-                </View>
-                <ThemedText
-                  style={[
-                    styles.recentItemText,
-                    { color: isDark ? "#FFFFFF" : "#1C1C1E" },
-                  ]}
-                >
-                  Voice recognition demo
-                </ThemedText>
-                <ThemedText style={styles.recentMenu}>⋯</ThemedText>
-              </Pressable>
-
-              <Pressable style={styles.recentItem}>
-                <View
-                  style={[styles.recentAvatar, { backgroundColor: "#F4E1A1" }]}
-                >
-                  <ThemedText style={styles.recentAvatarText}>📝</ThemedText>
-                </View>
-                <ThemedText
-                  style={[
-                    styles.recentItemText,
-                    { color: isDark ? "#FFFFFF" : "#1C1C1E" },
-                  ]}
-                >
-                  Transcription analysis
+                  How to improve my productivity?
                 </ThemedText>
                 <ThemedText style={styles.recentMenu}>⋯</ThemedText>
               </Pressable>
@@ -241,7 +213,7 @@ export default function HomeScreen() {
       </ScrollView>
 
       {/* Auth Modal */}
-      <AuthModal
+      <PhoneAuthModal
         visible={showAuthModal}
         onClose={() => setShowAuthModal(false)}
       />
@@ -335,9 +307,10 @@ const styles = StyleSheet.create({
   },
   cardDisabledText: {
     fontSize: 12,
-    color: "#8E8E93",
+    color: "#666666",
     marginTop: 4,
     fontStyle: "italic",
+    fontWeight: "500",
   },
   newChatCard: {
     backgroundColor: "#F8F6F0",
@@ -352,7 +325,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   cardIcon: {
-    fontSize: 24,
+    fontSize: 20,
+    lineHeight: 24,
   },
   newBadge: {
     backgroundColor: "#667EEA",
@@ -439,7 +413,7 @@ const styles = StyleSheet.create({
   recentAvatarText: {
     fontSize: 16,
   },
-  recentItemText: {
+  recentText: {
     flex: 1,
     fontSize: 16,
   },
