@@ -7,7 +7,9 @@ import { useEffect } from "react";
 import "react-native-reanimated";
 
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { queryClient } from "@/lib/queryClient";
 import { ClerkProvider } from "@clerk/clerk-expo";
+import { QueryClientProvider } from "@tanstack/react-query";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -53,21 +55,31 @@ export default function RootLayout() {
 
   return (
     <ClerkProvider publishableKey={publishableKey}>
-      <ThemeProvider value={GlassTheme}>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="+not-found" />
-          <Stack.Screen
-            name="new-chat"
-            options={{
-              headerShown: false,
-              gestureEnabled: true,
-              animation: "slide_from_bottom",
-            }}
-          />
-        </Stack>
-        <StatusBar style="light" />
-      </ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider value={GlassTheme}>
+          <Stack>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="+not-found" />
+            <Stack.Screen
+              name="new-chat"
+              options={{
+                headerShown: false,
+                gestureEnabled: true,
+                animation: "slide_from_bottom",
+              }}
+            />
+            <Stack.Screen
+              name="profile-setup"
+              options={{
+                headerShown: false,
+                gestureEnabled: true,
+                animation: "slide_from_bottom",
+              }}
+            />
+          </Stack>
+          <StatusBar style="light" />
+        </ThemeProvider>
+      </QueryClientProvider>
     </ClerkProvider>
   );
 }

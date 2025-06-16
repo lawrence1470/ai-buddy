@@ -4,6 +4,7 @@ import ProfileCompletionCard from "@/components/ProfileCompletionCard";
 import { ThemedText } from "@/components/ThemedText";
 import { useAISpeaking } from "@/hooks/useAISpeaking";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { useUserProfile } from "@/hooks/useUserProfile";
 import { useAuth, useUser } from "@clerk/clerk-expo";
 import { router } from "expo-router";
 import { useState } from "react";
@@ -21,6 +22,9 @@ export default function HomeScreen() {
   const { isSignedIn, signOut } = useAuth();
   const { user } = useUser();
   const [showAuthModal, setShowAuthModal] = useState(false);
+
+  // Get user profile from Supabase
+  const { data: userProfile } = useUserProfile();
 
   const isDark = colorScheme === "dark";
 
@@ -47,8 +51,11 @@ export default function HomeScreen() {
   const getGreeting = () => {
     if (!isSignedIn) return "Hello there";
 
-    if (user?.firstName) {
-      return `Hello ${user.firstName}`;
+    // Prefer Supabase profile name, fallback to Clerk firstName
+    const name = userProfile?.name || user?.firstName;
+
+    if (name) {
+      return `Hello ${name}`;
     }
 
     return "Hello there";

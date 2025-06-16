@@ -1,5 +1,6 @@
 import { ThemedText } from "@/components/ThemedText";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { useUpsertUserProfile, useUserProfile } from "@/hooks/useUserProfile";
 import { useUser } from "@clerk/clerk-expo";
 import { router } from "expo-router";
 import React, { useState } from "react";
@@ -19,8 +20,15 @@ export default function ProfileSetupScreen() {
   const { user } = useUser();
   const isDark = colorScheme === "dark";
 
-  const [firstName, setFirstName] = useState(user?.firstName || "");
-  const [loading, setLoading] = useState(false);
+  // Get existing profile data
+  const { data: existingProfile } = useUserProfile();
+
+  // Mutation for saving profile
+  const upsertProfile = useUpsertUserProfile();
+
+  const [firstName, setFirstName] = useState(
+    existingProfile?.name || user?.firstName || ""
+  );
 
   const handleSave = async () => {
     if (!firstName.trim()) {
@@ -28,31 +36,33 @@ export default function ProfileSetupScreen() {
       return;
     }
 
-    setLoading(true);
     try {
-      await user?.update({
-        firstName: firstName.trim(),
-      });
+      await upsertProfile.mutateAsync({ name: firstName.trim() });
+
+      // Also update Clerk profile for consistency
+      try {
+        await user?.update({
+          firstName: firstName.trim(),
+        });
+      } catch (clerkError) {
+        // Continue even if Clerk update fails - Supabase is our source of truth
+        console.warn("Failed to update Clerk profile:", clerkError);
+      }
 
       Alert.alert("Success!", "Your profile has been updated", [
         { text: "OK", onPress: () => router.back() },
       ]);
     } catch (error: any) {
       console.error("Profile update error:", error);
-      Alert.alert(
-        "Error",
-        error.errors?.[0]?.message ||
-          error.message ||
-          "Failed to update profile"
-      );
-    } finally {
-      setLoading(false);
+      Alert.alert("Error", error.message || "Failed to update profile");
     }
   };
 
   const handleSkip = () => {
     router.back();
   };
+
+  const isLoading = upsertProfile.isPending;
 
   return (
     <SafeAreaView
@@ -123,6 +133,7 @@ export default function ProfileSetupScreen() {
                 autoCorrect={false}
                 spellCheck={false}
                 autoFocus
+                editable={!isLoading}
               />
             </View>
           </View>
@@ -132,13 +143,13 @@ export default function ProfileSetupScreen() {
             style={[
               styles.saveButton,
               { backgroundColor: "#667EEA" },
-              loading && styles.buttonDisabled,
+              isLoading && styles.buttonDisabled,
             ]}
             onPress={handleSave}
-            disabled={loading}
+            disabled={isLoading}
           >
             <ThemedText style={styles.saveButtonText}>
-              {loading ? "Saving..." : "Save"}
+              {isLoading ? "Saving..." : "Save"}
             </ThemedText>
           </Pressable>
         </View>

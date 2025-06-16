@@ -1,4 +1,5 @@
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { useProfileCompletion } from "@/hooks/useUserProfile";
 import { useUser } from "@clerk/clerk-expo";
 import { router } from "expo-router";
 import React from "react";
@@ -16,10 +17,14 @@ export default function ProfileCompletionCard({
   const { user } = useUser();
   const isDark = colorScheme === "dark";
 
-  // Check if user needs to complete profile
-  const needsProfileCompletion = !user?.firstName || !user?.lastName;
+  // Use the TanStack Query hook to check profile completion
+  const { data: hasCompletedProfile, isLoading } = useProfileCompletion();
 
-  if (!needsProfileCompletion) {
+  // Don't show the card if:
+  // - User is not signed in
+  // - Profile completion check is loading
+  // - User has already completed their profile
+  if (!user || isLoading || hasCompletedProfile) {
     return null;
   }
 
