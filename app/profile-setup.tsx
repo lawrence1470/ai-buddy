@@ -3,7 +3,7 @@ import { useColorScheme } from "@/hooks/useColorScheme";
 import { useUpsertUserProfile, useUserProfile } from "@/hooks/useUserProfile";
 import { useUser } from "@clerk/clerk-expo";
 import { router } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -21,14 +21,36 @@ export default function ProfileSetupScreen() {
   const isDark = colorScheme === "dark";
 
   // Get existing profile data
-  const { data: existingProfile } = useUserProfile();
+  const { data: existingProfile, isLoading: isProfileLoading } =
+    useUserProfile();
 
   // Mutation for saving profile
   const upsertProfile = useUpsertUserProfile();
 
-  const [firstName, setFirstName] = useState(
-    existingProfile?.name || user?.firstName || ""
-  );
+  const [firstName, setFirstName] = useState("");
+
+  // Update firstName when profile data loads
+  useEffect(() => {
+    console.log("Profile data:", existingProfile);
+    console.log("User data:", user?.firstName);
+
+    if (existingProfile?.name) {
+      console.log("Setting firstName from profile:", existingProfile.name);
+      setFirstName(existingProfile.name);
+    } else if (user?.firstName) {
+      console.log("Setting firstName from Clerk:", user.firstName);
+      setFirstName(user.firstName);
+    }
+  }, [existingProfile?.name, user?.firstName]);
+
+  // Get the current name for placeholder
+  const currentName = existingProfile?.name || user?.firstName || "";
+  const placeholderText = currentName
+    ? `Currently: ${currentName}`
+    : "Enter your name";
+
+  console.log("Current firstName state:", firstName);
+  console.log("Current placeholderText:", placeholderText);
 
   const handleSave = async () => {
     if (!firstName.trim()) {
@@ -123,7 +145,7 @@ export default function ProfileSetupScreen() {
                     borderColor: isDark ? "#3A3A3C" : "#E5E5EA",
                   },
                 ]}
-                placeholder="Enter your name"
+                placeholder={firstName ? "" : placeholderText}
                 placeholderTextColor={isDark ? "#8E8E93" : "#8E8E93"}
                 value={firstName}
                 onChangeText={setFirstName}

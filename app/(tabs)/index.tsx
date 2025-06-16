@@ -105,24 +105,6 @@ export default function HomeScreen() {
                 </ThemedText>
               </View>
             </View>
-            {/* Sign In/Out Button */}
-            {isSignedIn ? (
-              <Pressable
-                style={[styles.authButton, styles.signOutButton]}
-                onPress={handleSignOut}
-              >
-                <ThemedText style={styles.signOutButtonText}>
-                  Sign Out
-                </ThemedText>
-              </Pressable>
-            ) : (
-              <Pressable
-                style={[styles.authButton, styles.signInButton]}
-                onPress={() => setShowAuthModal(true)}
-              >
-                <ThemedText style={styles.signInButtonText}>Sign In</ThemedText>
-              </Pressable>
-            )}
           </View>
         </View>
 
