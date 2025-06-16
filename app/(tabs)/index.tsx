@@ -1,5 +1,6 @@
 import Orb from "@/components/Orb";
 import PhoneAuthModal from "@/components/PhoneAuthModal";
+import ProfileCompletionCard from "@/components/ProfileCompletionCard";
 import { ThemedText } from "@/components/ThemedText";
 import { useAISpeaking } from "@/hooks/useAISpeaking";
 import { useColorScheme } from "@/hooks/useColorScheme";
@@ -43,6 +44,16 @@ export default function HomeScreen() {
     await signOut();
   };
 
+  const getGreeting = () => {
+    if (!isSignedIn) return "Hello there";
+
+    if (user?.firstName) {
+      return `Hello ${user.firstName}`;
+    }
+
+    return "Hello there";
+  };
+
   return (
     <SafeAreaView
       style={[
@@ -73,16 +84,7 @@ export default function HomeScreen() {
                     { color: isDark ? "#FFFFFF" : "#1C1C1E" },
                   ]}
                 >
-                  {isSignedIn
-                    ? `Hello ${
-                        user?.firstName ||
-                        user?.phoneNumbers?.[0]?.phoneNumber?.replace(
-                          /^\+1/,
-                          ""
-                        ) ||
-                        "there"
-                      }`
-                    : "Hello there"}
+                  {getGreeting()}
                 </ThemedText>
                 <ThemedText
                   style={[
@@ -116,6 +118,9 @@ export default function HomeScreen() {
             )}
           </View>
         </View>
+
+        {/* Profile Completion Card - Only show for signed in users who need to complete profile */}
+        {isSignedIn && <ProfileCompletionCard />}
 
         {/* Action Cards */}
         <View style={styles.actionCards}>
