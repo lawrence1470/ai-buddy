@@ -1,6 +1,7 @@
 import Orb from "@/components/Orb";
 import PhoneAuthModal from "@/components/PhoneAuthModal";
 import ProfileCompletionCard from "@/components/ProfileCompletionCard";
+import RecentSessions from "@/components/RecentSessions";
 import { ThemedText } from "@/components/ThemedText";
 import { useAISpeaking } from "@/hooks/useAISpeaking";
 import { useColorScheme } from "@/hooks/useColorScheme";
@@ -46,6 +47,17 @@ export default function HomeScreen() {
 
   const handleSignOut = async () => {
     await signOut();
+  };
+
+  const handleSeeAllSessions = () => {
+    // TODO: Navigate to all sessions page
+    console.log("Navigate to all sessions");
+  };
+
+  const handleSessionPress = (sessionId: string) => {
+    // TODO: Navigate to specific session
+    console.log("Navigate to session:", sessionId);
+    router.push("/new-chat");
   };
 
   const getGreeting = () => {
@@ -171,38 +183,10 @@ export default function HomeScreen() {
 
         {/* Recent Sessions - Only show if authenticated */}
         {isSignedIn && (
-          <View style={styles.recentSection}>
-            <View style={styles.recentHeader}>
-              <ThemedText
-                style={[
-                  styles.recentTitle,
-                  { color: isDark ? "#FFFFFF" : "#1C1C1E" },
-                ]}
-              >
-                Recent Sessions
-              </ThemedText>
-              <Pressable>
-                <ThemedText style={styles.seeAllText}>See All</ThemedText>
-              </Pressable>
-            </View>
-
-            <View style={styles.recentList}>
-              <Pressable style={styles.recentItem}>
-                <View style={styles.recentAvatar}>
-                  <ThemedText style={styles.recentAvatarText}>💬</ThemedText>
-                </View>
-                <ThemedText
-                  style={[
-                    styles.recentText,
-                    { color: isDark ? "#FFFFFF" : "#1C1C1E" },
-                  ]}
-                >
-                  How to improve my productivity?
-                </ThemedText>
-                <ThemedText style={styles.recentMenu}>⋯</ThemedText>
-              </Pressable>
-            </View>
-          </View>
+          <RecentSessions
+            onSeeAll={handleSeeAllSessions}
+            onSessionPress={handleSessionPress}
+          />
         )}
       </ScrollView>
 
@@ -369,50 +353,5 @@ const styles = StyleSheet.create({
   searchText: {
     fontSize: 16,
     color: "#1C1C1E",
-  },
-  recentSection: {
-    paddingHorizontal: 20,
-  },
-  recentHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  recentTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-  },
-  seeAllText: {
-    fontSize: 16,
-    color: "#667EEA",
-  },
-  recentList: {
-    gap: 12,
-  },
-  recentItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 8,
-  },
-  recentAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#667EEA",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  recentAvatarText: {
-    fontSize: 16,
-  },
-  recentText: {
-    flex: 1,
-    fontSize: 16,
-  },
-  recentMenu: {
-    fontSize: 20,
-    color: "#8E8E93",
   },
 });

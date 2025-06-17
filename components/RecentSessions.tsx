@@ -1,45 +1,86 @@
 import { ThemedText } from "@/components/ThemedText";
+import { useColorScheme } from "@/hooks/useColorScheme";
 import React from "react";
-import { StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 
-export default function RecentSessions() {
+interface RecentSessionsProps {
+  onSeeAll?: () => void;
+  onSessionPress?: (sessionId: string) => void;
+}
+
+export default function RecentSessions({
+  onSeeAll,
+  onSessionPress,
+}: RecentSessionsProps) {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+
+  const recentSessions = [
+    {
+      id: "1",
+      title: "How to improve my productivity?",
+      icon: "💬",
+      backgroundColor: "#667EEA",
+    },
+    {
+      id: "2",
+      title: "What are the latest AI trends?",
+      icon: "🤖",
+      backgroundColor: "#667EEA",
+    },
+    {
+      id: "3",
+      title: "Help me plan my weekly schedule",
+      icon: "📅",
+      backgroundColor: "#667EEA",
+    },
+  ];
+
   return (
     <View style={styles.recentSection}>
-      <View style={styles.sectionHeader}>
-        <ThemedText style={styles.sectionTitle}>Recent Sessions</ThemedText>
-        <ThemedText style={styles.seeAll}>See All</ThemedText>
+      <View style={styles.recentHeader}>
+        <ThemedText
+          style={[
+            styles.recentTitle,
+            { color: isDark ? "#FFFFFF" : "#1C1C1E" },
+          ]}
+        >
+          Recent Sessions
+        </ThemedText>
+        <Pressable onPress={onSeeAll}>
+          <ThemedText style={styles.seeAllText}>See All</ThemedText>
+        </Pressable>
       </View>
 
-      <View style={styles.recentItems}>
-        <View style={styles.recentItem}>
-          <View style={[styles.recentIcon, { backgroundColor: "#E6E6FA" }]}>
-            <ThemedText style={styles.recentIconText}>💬</ThemedText>
-          </View>
-          <ThemedText style={styles.recentText} numberOfLines={2}>
-            What is artificial intelligence?
-          </ThemedText>
-          <ThemedText style={styles.moreIcon}>⋯</ThemedText>
-        </View>
-
-        <View style={styles.recentItem}>
-          <View style={[styles.recentIcon, { backgroundColor: "#2C2C2E" }]}>
-            <ThemedText style={styles.recentIconText}>🎵</ThemedText>
-          </View>
-          <ThemedText style={styles.recentText} numberOfLines={2}>
-            Voice recognition demo
-          </ThemedText>
-          <ThemedText style={styles.moreIcon}>⋯</ThemedText>
-        </View>
-
-        <View style={styles.recentItem}>
-          <View style={[styles.recentIcon, { backgroundColor: "#FFE4B5" }]}>
-            <ThemedText style={styles.recentIconText}>📝</ThemedText>
-          </View>
-          <ThemedText style={styles.recentText} numberOfLines={2}>
-            Transcription analysis
-          </ThemedText>
-          <ThemedText style={styles.moreIcon}>⋯</ThemedText>
-        </View>
+      <View style={styles.recentList}>
+        {recentSessions.map((session) => (
+          <Pressable
+            key={session.id}
+            style={styles.recentItem}
+            onPress={() => onSessionPress?.(session.id)}
+          >
+            <View
+              style={[
+                styles.recentAvatar,
+                { backgroundColor: session.backgroundColor },
+              ]}
+            >
+              <ThemedText style={styles.recentAvatarText}>
+                {session.icon}
+              </ThemedText>
+            </View>
+            <ThemedText
+              style={[
+                styles.recentText,
+                { color: isDark ? "#FFFFFF" : "#1C1C1E" },
+              ]}
+              numberOfLines={1}
+            >
+              {session.title}
+            </ThemedText>
+            <ThemedText style={styles.recentMenu}>⋯</ThemedText>
+          </Pressable>
+        ))}
       </View>
     </View>
   );
@@ -47,59 +88,52 @@ export default function RecentSessions() {
 
 const styles = StyleSheet.create({
   recentSection: {
+    paddingHorizontal: 20,
     marginBottom: 20,
   },
-  sectionHeader: {
+  recentHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 16,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#1C1C1E",
+  recentTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
   },
-  seeAll: {
-    fontSize: 15,
-    color: "#007AFF",
+  seeAllText: {
+    fontSize: 16,
+    color: "#667EEA",
   },
-  recentItems: {
-    gap: 10,
+  recentList: {
+    gap: 0,
   },
   recentItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    backgroundColor: "white",
-    padding: 12,
-    borderRadius: 14,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 2,
-    minHeight: 60,
+    paddingVertical: 12,
+    paddingHorizontal: 0,
   },
-  recentIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+  recentAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
+    marginRight: 12,
     flexShrink: 0,
   },
-  recentIconText: {
+  recentAvatarText: {
     fontSize: 16,
   },
   recentText: {
     flex: 1,
-    fontSize: 15,
-    color: "#1C1C1E",
+    fontSize: 16,
     lineHeight: 20,
+    marginRight: 8,
   },
-  moreIcon: {
-    fontSize: 15,
+  recentMenu: {
+    fontSize: 20,
     color: "#8E8E93",
     flexShrink: 0,
   },

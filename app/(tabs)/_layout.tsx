@@ -62,6 +62,19 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="personality"
+        options={{
+          title: "Personality",
+          tabBarIcon: ({ color, focused }) => (
+            <IconSymbol
+              size={focused ? 26 : 24}
+              name="person.crop.circle.fill"
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="settings"
         options={{
           title: "Settings",
