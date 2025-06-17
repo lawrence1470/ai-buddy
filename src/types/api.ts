@@ -4,6 +4,63 @@
  */
 
 export interface paths {
+    "/chat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 💬 AI Chat Conversation
+         * @description Send a message to the AI and receive a conversational response. Supports both text and voice interactions with conversation context for multi-turn conversations.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ChatRequest"];
+                };
+            };
+            responses: {
+                /** @description AI response generated successfully */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ChatResponse"];
+                    };
+                };
+                /** @description Invalid request - missing text/message */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Internal server error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -163,10 +220,174 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sessions/user/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 📚 Get user's sessions with summaries
+         * @description Retrieve recent sessions for a user with AI-generated summaries.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Number of sessions to retrieve */
+                    limit?: number;
+                };
+                header?: never;
+                path: {
+                    /** @description User identifier */
+                    user_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Sessions retrieved successfully */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SessionSummary"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sessions/{session_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 📋 Get session details with AI summary
+         * @description Retrieve a specific session including AI-generated summary and sentiment analysis.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Session identifier */
+                    session_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Session retrieved successfully */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SessionDetails"];
+                    };
+                };
+                /** @description Session not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        ChatRequest: {
+            /**
+             * @description Previous conversation messages for context
+             * @example [
+             *       {
+             *         "isUser": true,
+             *         "text": "What's the weather like?"
+             *       },
+             *       {
+             *         "isUser": false,
+             *         "text": "I don't have access to real-time weather data, but I'd be happy to help you find weather information!"
+             *       }
+             *     ]
+             */
+            conversation_context?: {
+                /** @example true */
+                isUser?: boolean;
+                /** @example What's the weather like? */
+                text?: string;
+                /** @example 2024-01-15T14:30:00Z */
+                timestamp?: string;
+            }[];
+            /**
+             * @description Whether this message came from voice input
+             * @example false
+             */
+            is_voice?: boolean;
+            /**
+             * @description The user's message to send to the AI
+             * @example Hello! How are you doing today?
+             */
+            text: string;
+            /**
+             * @description Optional user identifier for personalization
+             * @example user-12345-abcdef
+             */
+            user_id?: string;
+        };
+        ChatResponse: {
+            /**
+             * @description Error message if success is false
+             * @example API rate limit exceeded
+             */
+            error?: string;
+            /**
+             * @description AI model used for the response
+             * @example gpt-3.5-turbo
+             */
+            model?: string;
+            /**
+             * @description The AI's response message
+             * @example Hello! I'm doing well, thank you for asking. How are you doing today?
+             */
+            response?: string;
+            /**
+             * @description Whether the request was successful
+             * @example true
+             */
+            success?: boolean;
+            /**
+             * @description When the response was generated
+             * @example 2024-01-15T14:30:00Z
+             */
+            timestamp?: string;
+            /**
+             * @description Number of tokens consumed by the request
+             * @example 25
+             */
+            tokens_used?: number;
+        };
         HealthStatus: {
             /** @example true */
             ai_service_available?: boolean;
@@ -203,6 +424,28 @@ export interface components {
             /** @example user-12345-abcdef */
             user_id?: string;
         };
+        SessionDetails: {
+            /** @example 2024-01-15T14:30:00Z */
+            created_at?: string;
+            /** @example 750 */
+            duration_seconds?: number;
+            /** @example 2024-01-15T14:42:30Z */
+            ended_at?: string;
+            /** @example 18 */
+            message_count?: number;
+            /** @example {
+             *       "dominant_emotion": "confident",
+             *       "overall_sentiment": 0.68
+             *     } */
+            sentiment_summary?: Record<string, never>;
+            /** @example session-20240115-143000 */
+            session_id?: string;
+            /** @example User discussed career planning and leadership preferences, demonstrating strategic thinking. */
+            topic_summary?: string;
+            transcript?: components["schemas"]["TranscriptMessage"][];
+            /** @example user-12345-abcdef */
+            user_id?: string;
+        };
         SessionProcessResult: {
             /** @example {
              *       "mbti_type": "ENTJ"
@@ -210,12 +453,27 @@ export interface components {
             personality_update?: Record<string, never>;
             /** @example 1250 */
             processing_time_ms?: number;
+            /** @example {
+             *       "confidence": 0.85,
+             *       "emotions": [
+             *         "confident",
+             *         "analytical"
+             *       ],
+             *       "intensity": 7,
+             *       "overall_sentiment": 0.65,
+             *       "stability": "stable",
+             *       "tone": "positive"
+             *     } */
+            sentiment_analysis?: Record<string, never>;
             /** @example session-20240115-143000 */
             session_id?: string;
             /** @example {
+             *       "avg_sentiment": 0.65,
              *       "total_messages": 15
              *     } */
             session_insights?: Record<string, never>;
+            /** @example User discussed career goals and decision-making preferences, showing strong analytical thinking and future-focused planning. */
+            session_summary?: string;
             /** @example true */
             success?: boolean;
             /** @example user-12345-abcdef */
@@ -231,6 +489,25 @@ export interface components {
             transcript: components["schemas"]["TranscriptMessage"][];
             /** @example user-12345-abcdef */
             user_id: string;
+        };
+        SessionSummary: {
+            /** @example 2024-01-15T14:30:00Z */
+            created_at?: string;
+            /** @example 600 */
+            duration_seconds?: number;
+            /** @example 2024-01-15T14:42:30Z */
+            ended_at?: string;
+            /** @example 12 */
+            message_count?: number;
+            /** @example {
+             *       "overall_sentiment": 0.72,
+             *       "tone": "positive"
+             *     } */
+            sentiment_summary?: Record<string, never>;
+            /** @example session-20240115-143000 */
+            session_id?: string;
+            /** @example Discussion about work-life balance and decision-making approaches. */
+            topic_summary?: string;
         };
         TranscriptMessage: {
             /** @example I love planning ahead and organizing my schedule */

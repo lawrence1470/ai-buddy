@@ -60,6 +60,12 @@ export default function HomeScreen() {
     router.push("/new-chat");
   };
 
+  const handleSessionDelete = (sessionId: string) => {
+    // TODO: Delete session from database/storage
+    console.log("Delete session:", sessionId);
+    // Add your session deletion logic here
+  };
+
   const getGreeting = () => {
     if (!isSignedIn) return "Hello there";
 
@@ -186,6 +192,7 @@ export default function HomeScreen() {
           <RecentSessions
             onSeeAll={handleSeeAllSessions}
             onSessionPress={handleSessionPress}
+            onSessionDelete={handleSessionDelete}
           />
         )}
       </ScrollView>

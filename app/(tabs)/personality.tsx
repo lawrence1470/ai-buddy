@@ -2,11 +2,12 @@ import Orb from "@/components/Orb";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { useColorScheme } from "@/hooks/useColorScheme";
-import { supabase } from "@/lib/supabase";
+import { useSessions } from "@/hooks/useSessions";
 import {
   PersonalityProfile,
   personalityService,
 } from "@/services/personalityService";
+import { useUser } from "@clerk/clerk-expo";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useState } from "react";
 import {
@@ -25,61 +26,24 @@ export default function PersonalityScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
 
+  const { user } = useUser();
+  const { sessions } = useSessions();
   const [personality, setPersonality] = useState<PersonalityProfile | null>(
     null
   );
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  useEffect(() => {
-    getCurrentUser();
-
-    // Listen for auth state changes
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (session?.user) {
-          setUserId(session.user.id);
-          setIsAuthenticated(true);
-        } else {
-          setUserId(null);
-          setIsAuthenticated(false);
-          setPersonality(null);
-        }
-        setLoading(false);
-      }
-    );
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, []);
+  const isAuthenticated = !!user;
+  const userId = user?.id;
 
   useEffect(() => {
     if (userId && isAuthenticated) {
       fetchPersonalityData();
+    } else {
+      setLoading(false);
     }
   }, [userId, isAuthenticated]);
-
-  const getCurrentUser = async () => {
-    try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (session?.user) {
-        setUserId(session.user.id);
-        setIsAuthenticated(true);
-      } else {
-        setIsAuthenticated(false);
-      }
-      setLoading(false);
-    } catch (error) {
-      console.error("Error getting current user:", error);
-      setLoading(false);
-      setIsAuthenticated(false);
-    }
-  };
 
   const fetchPersonalityData = async () => {
     if (!userId) return;
@@ -221,24 +185,97 @@ export default function PersonalityScreen() {
     );
   };
 
-  const renderEmptyState = () => (
-    <ThemedView
-      style={[styles.card, { backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF" }]}
-    >
-      <View style={styles.emptyStateContainer}>
-        <ThemedText style={styles.emptyStateTitle}>
-          No Personality Data Yet
-        </ThemedText>
-        <ThemedText style={styles.emptyStateMessage}>
-          Start chatting with your AI buddy to build your personality profile!
-        </ThemedText>
-        <ThemedText style={styles.emptyStateSubmessage}>
-          Your conversations will be analyzed to understand your communication
-          patterns and personality traits.
-        </ThemedText>
-      </View>
-    </ThemedView>
-  );
+  const renderDataCollectionState = () => {
+    const sessionCount = sessions.length;
+    const minSessionsNeeded = 5;
+    const progressPercentage = Math.min(
+      (sessionCount / minSessionsNeeded) * 100,
+      100
+    );
+
+    return (
+      <ThemedView
+        style={[
+          styles.card,
+          { backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF" },
+        ]}
+      >
+        <View style={styles.dataCollectionContainer}>
+          <View style={styles.progressHeader}>
+            <ThemedText style={styles.dataCollectionTitle}>
+              Building Your Personality Profile
+            </ThemedText>
+            <View style={styles.progressContainer}>
+              <View
+                style={[
+                  styles.progressBar,
+                  { backgroundColor: isDark ? "#333" : "#E5E5E5" },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.progressFill,
+                    {
+                      width: `${progressPercentage}%`,
+                      backgroundColor: "#667EEA",
+                    },
+                  ]}
+                />
+              </View>
+              <ThemedText style={styles.progressText}>
+                {sessionCount}/{minSessionsNeeded} conversations
+              </ThemedText>
+            </View>
+          </View>
+
+          <ThemedText style={styles.dataCollectionMessage}>
+            {sessionCount === 0
+              ? "Start your first conversation to begin building your personality profile!"
+              : sessionCount < minSessionsNeeded
+              ? `Keep chatting! We need ${
+                  minSessionsNeeded - sessionCount
+                } more conversations to create your detailed personality insights.`
+              : "We have enough data to analyze your personality patterns. Your insights will appear here soon!"}
+          </ThemedText>
+
+          <View style={styles.learningPoints}>
+            <ThemedText style={styles.learningTitle}>
+              What we learn from your conversations:
+            </ThemedText>
+            <View style={styles.learningItem}>
+              <ThemedText style={styles.bulletPoint}>•</ThemedText>
+              <ThemedText style={styles.learningText}>
+                Communication style and preferences
+              </ThemedText>
+            </View>
+            <View style={styles.learningItem}>
+              <ThemedText style={styles.bulletPoint}>•</ThemedText>
+              <ThemedText style={styles.learningText}>
+                Personality traits (introversion/extraversion, thinking/feeling)
+              </ThemedText>
+            </View>
+            <View style={styles.learningItem}>
+              <ThemedText style={styles.bulletPoint}>•</ThemedText>
+              <ThemedText style={styles.learningText}>
+                Decision-making patterns and interests
+              </ThemedText>
+            </View>
+            <View style={styles.learningItem}>
+              <ThemedText style={styles.bulletPoint}>•</ThemedText>
+              <ThemedText style={styles.learningText}>
+                Emotional expressions and conversation topics
+              </ThemedText>
+            </View>
+          </View>
+
+          <ThemedText style={styles.privacyNote}>
+            🔒 Your conversations are private and secure. We only analyze
+            patterns to help understand your personality better.
+          </ThemedText>
+        </View>
+      </ThemedView>
+    );
+  };
 
   const renderLoginRequired = () => (
     <ThemedView
@@ -310,7 +347,7 @@ export default function PersonalityScreen() {
               {renderConversationInsights()}
             </>
           ) : (
-            renderEmptyState()
+            renderDataCollectionState()
           )}
 
           {personality?.last_updated && (
@@ -489,5 +526,76 @@ const styles = StyleSheet.create({
     fontSize: 12,
     opacity: 0.5,
     marginTop: 16,
+  },
+  // Data Collection State Styles
+  dataCollectionContainer: {
+    paddingVertical: 24,
+  },
+  progressHeader: {
+    marginBottom: 20,
+  },
+  dataCollectionTitle: {
+    fontSize: 22,
+    fontWeight: "bold",
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  progressContainer: {
+    marginBottom: 8,
+  },
+  progressBar: {
+    height: 8,
+    borderRadius: 4,
+    overflow: "hidden",
+    marginBottom: 8,
+  },
+  progressFill: {
+    height: "100%",
+    borderRadius: 4,
+  },
+  progressText: {
+    fontSize: 14,
+    textAlign: "center",
+    opacity: 0.7,
+    fontWeight: "500",
+  },
+  dataCollectionMessage: {
+    fontSize: 16,
+    lineHeight: 24,
+    textAlign: "center",
+    marginBottom: 24,
+    opacity: 0.8,
+  },
+  learningPoints: {
+    marginBottom: 20,
+  },
+  learningTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 12,
+  },
+  learningItem: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 8,
+  },
+  bulletPoint: {
+    fontSize: 16,
+    color: "#667EEA",
+    marginRight: 8,
+    lineHeight: 20,
+  },
+  learningText: {
+    fontSize: 14,
+    lineHeight: 20,
+    flex: 1,
+    opacity: 0.8,
+  },
+  privacyNote: {
+    fontSize: 13,
+    lineHeight: 18,
+    opacity: 0.6,
+    textAlign: "center",
+    fontStyle: "italic",
   },
 });

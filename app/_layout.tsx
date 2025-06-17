@@ -4,10 +4,12 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { queryClient } from "@/lib/queryClient";
+import { tokenCache } from "@/lib/tokenCache";
 import { ClerkProvider } from "@clerk/clerk-expo";
 import { QueryClientProvider } from "@tanstack/react-query";
 
@@ -54,32 +56,34 @@ export default function RootLayout() {
   }
 
   return (
-    <ClerkProvider publishableKey={publishableKey}>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider value={GlassTheme}>
-          <Stack>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="+not-found" />
-            <Stack.Screen
-              name="new-chat"
-              options={{
-                headerShown: false,
-                gestureEnabled: true,
-                animation: "slide_from_bottom",
-              }}
-            />
-            <Stack.Screen
-              name="profile-setup"
-              options={{
-                headerShown: false,
-                gestureEnabled: true,
-                animation: "slide_from_bottom",
-              }}
-            />
-          </Stack>
-          <StatusBar style="light" />
-        </ThemeProvider>
-      </QueryClientProvider>
-    </ClerkProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider value={GlassTheme}>
+            <Stack>
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="+not-found" />
+              <Stack.Screen
+                name="new-chat"
+                options={{
+                  headerShown: false,
+                  gestureEnabled: true,
+                  animation: "slide_from_bottom",
+                }}
+              />
+              <Stack.Screen
+                name="profile-setup"
+                options={{
+                  headerShown: false,
+                  gestureEnabled: true,
+                  animation: "slide_from_bottom",
+                }}
+              />
+            </Stack>
+            <StatusBar style="light" />
+          </ThemeProvider>
+        </QueryClientProvider>
+      </ClerkProvider>
+    </GestureHandlerRootView>
   );
 }
