@@ -1,11 +1,12 @@
-import Chat from "@/components/Chat";
+import Chat, { ChatRef } from "@/components/Chat";
 import ChatInput from "@/components/ChatInput";
 import Orb from "@/components/Orb";
+import SessionEndModal from "@/components/SessionEndModal";
 import { ThemedText } from "@/components/ThemedText";
 import { useAISpeaking } from "@/hooks/useAISpeaking";
 import { ChatMessage } from "@/services/chatService";
 import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Keyboard,
   KeyboardAvoidingView,
@@ -21,7 +22,10 @@ export default function NewChatScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [showEndSessionModal, setShowEndSessionModal] = useState(false);
+  const [sessionStartTime] = useState<Date>(new Date());
   const isSpeaking = useAISpeaking();
+  const chatRef = useRef<ChatRef>(null);
 
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
@@ -45,61 +49,65 @@ export default function NewChatScreen() {
     };
   }, []);
 
-  const handleSendMessage = (text: string) => {
-    // Add user message
-    const userMessage: ChatMessage = {
-      id: Date.now().toString(),
-      text,
-      isUser: true,
-      timestamp: new Date(),
-    };
-    setMessages((prev) => [...prev, userMessage]);
+  const formatSessionDuration = (): string => {
+    const now = new Date();
+    const diffMs = now.getTime() - sessionStartTime.getTime();
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    const diffSeconds = Math.floor((diffMs % (1000 * 60)) / 1000);
 
-    // Simulate AI response
-    setIsLoading(true);
-    setTimeout(() => {
-      const aiMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        text: "I received your message: " + text,
-        isUser: false,
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, aiMessage]);
-      setIsLoading(false);
-    }, 1000);
+    if (diffMinutes > 0) {
+      return `${diffMinutes}m ${diffSeconds}s`;
+    }
+    return `${diffSeconds}s`;
   };
 
-  const handleTranscriptionReceived = (text: string) => {
-    // Add user message with voice indicator
-    const userMessage: ChatMessage = {
-      id: Date.now().toString(),
-      text,
-      isUser: true,
-      timestamp: new Date(),
-      isVoice: true,
-    };
-    setMessages((prev) => [...prev, userMessage]);
-
-    // Simulate AI response
+  const handleSendMessage = async (text: string) => {
     setIsLoading(true);
-    setTimeout(() => {
-      const aiMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        text: "I received your voice message: " + text,
-        isUser: false,
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, aiMessage]);
+    try {
+      await chatRef.current?.sendTextMessage(text);
+    } catch (error) {
+      console.error("Failed to send text message:", error);
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
+  };
+
+  const handleMessageSent = (message: ChatMessage) => {
+    setMessages((prev) => [...prev, message]);
+    console.log("Message sent:", message);
+  };
+
+  const handleAIResponse = (message: ChatMessage) => {
+    setMessages((prev) => [...prev, message]);
+    console.log("AI response:", message);
   };
 
   const handleVoicePress = () => {
     console.log("Voice button pressed");
   };
 
-  const handleClose = () => {
+  // Show confirmation modal when close button is pressed
+  const handleClosePress = () => {
+    // Only show modal if there are messages (active session)
+    if (messages.length > 0) {
+      setShowEndSessionModal(true);
+    } else {
+      // If no messages, just close directly
+      router.back();
+    }
+  };
+
+  // Confirm ending the session
+  const handleConfirmEndSession = () => {
+    setShowEndSessionModal(false);
+    // TODO: Here you can add logic to save the session to backend
+    // For now, just navigate back
     router.back();
+  };
+
+  // Cancel ending the session
+  const handleCancelEndSession = () => {
+    setShowEndSessionModal(false);
   };
 
   return (
@@ -111,7 +119,7 @@ export default function NewChatScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Pressable onPress={handleClose} style={styles.closeButton}>
+          <Pressable onPress={handleClosePress} style={styles.closeButton}>
             <ThemedText style={styles.closeIcon}>✕</ThemedText>
           </Pressable>
           <ThemedText style={styles.headerTitle}>New Chat</ThemedText>
@@ -140,10 +148,11 @@ export default function NewChatScreen() {
           ]}
         >
           <Chat
+            ref={chatRef}
             messages={messages}
             isLoading={isLoading}
-            onMessageSent={(message) => console.log("Message sent:", message)}
-            onAIResponse={(message) => console.log("AI response:", message)}
+            onMessageSent={handleMessageSent}
+            onAIResponse={handleAIResponse}
             isKeyboardVisible={isKeyboardVisible}
           />
         </View>
@@ -159,6 +168,17 @@ export default function NewChatScreen() {
           />
         </View>
       </KeyboardAvoidingView>
+
+      {/* Session End Confirmation Modal */}
+      <SessionEndModal
+        visible={showEndSessionModal}
+        onConfirm={handleConfirmEndSession}
+        onCancel={handleCancelEndSession}
+        messageCount={messages.length}
+        sessionDuration={
+          messages.length > 0 ? formatSessionDuration() : undefined
+        }
+      />
     </SafeAreaView>
   );
 }

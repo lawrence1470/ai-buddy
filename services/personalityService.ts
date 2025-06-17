@@ -1,78 +1,27 @@
-import { supabase } from "../lib/supabase";
+import { components } from "@/src/types/api";
+import { ApiService } from "./apiService";
 
-// Import the types from the API types file
-export interface PersonalityProfile {
-  confidence_score?: number;
-  conversation_insights?: Record<string, any>;
-  last_updated?: string;
-  mbti_type?: string;
-  sessions_analyzed?: number;
-  trait_scores?: Record<string, number>;
-  type_description?: string;
-  user_id?: string;
-}
-
-export interface SessionRequest {
-  session_id: string;
-  session_metadata?: Record<string, any>;
-  transcript: TranscriptMessage[];
-  user_id: string;
-}
-
-export interface TranscriptMessage {
-  content: string;
-  emotions?: string[];
-  sentiment_score?: number;
-  speaker: "User" | "Assistant" | "System";
-  timestamp: string;
-}
-
-export interface SessionProcessResult {
-  personality_update?: Record<string, any>;
-  processing_time_ms?: number;
-  session_id?: string;
-  session_insights?: Record<string, any>;
-  success?: boolean;
-  user_id?: string;
-}
+// Use the API types directly instead of custom interfaces
+export type PersonalityProfile = components["schemas"]["PersonalityProfile"];
+export type SessionRequest = components["schemas"]["SessionRequest"];
+export type TranscriptMessage = components["schemas"]["TranscriptMessage"];
+export type SessionProcessResult =
+  components["schemas"]["SessionProcessResult"];
 
 class PersonalityService {
-  private baseUrl: string;
-
-  constructor() {
-    this.baseUrl =
-      process.env.EXPO_PUBLIC_BACKEND_URL || "http://localhost:3000";
-  }
-
   async getPersonalityProfile(
     userId: string
   ): Promise<PersonalityProfile | null> {
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error("Authentication required");
-      }
-
-      const response = await fetch(`${this.baseUrl}/personality/${userId}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-
-      if (!response.ok) {
-        if (response.status === 404) {
-          return null; // User not found or no personality data yet
-        }
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
+      return await ApiService.getPersonalityProfile(userId);
     } catch (error) {
       console.error("Error fetching personality profile:", error);
+
+      // If it's a "not found" error, return null
+      if (error instanceof Error && error.message.includes("not found")) {
+        return null;
+      }
+
       throw error;
     }
   }
@@ -81,27 +30,7 @@ class PersonalityService {
     sessionRequest: SessionRequest
   ): Promise<SessionProcessResult> {
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error("Authentication required");
-      }
-
-      const response = await fetch(`${this.baseUrl}/sessions/process`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify(sessionRequest),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
+      return await ApiService.processSession(sessionRequest);
     } catch (error) {
       console.error("Error processing session:", error);
       throw error;

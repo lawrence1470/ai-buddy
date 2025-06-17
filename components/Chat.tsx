@@ -1,8 +1,16 @@
+import { useChatMutation } from "@/hooks/useChat";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useVoiceRecording } from "@/hooks/useVoiceRecording";
-import { ChatMessage, ChatService } from "@/services/chatService";
+import { ChatMessage } from "@/services/chatService";
 import { TTSService } from "@/services/ttsService";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from "react";
 import { FlatList, StyleSheet, View } from "react-native";
 import { ThemedText } from "./ThemedText";
 import VoiceRecorder from "./VoiceRecorder";
@@ -18,225 +26,345 @@ interface ChatProps {
   isKeyboardVisible?: boolean;
 }
 
-export default function Chat({
-  messages = [],
-  isLoading = false,
-  onMessageSent,
-  onAIResponse,
-  isKeyboardVisible = false,
-}: ChatProps) {
-  const flatListRef = useRef<FlatList>(null);
-  const colorScheme = useColorScheme();
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(messages);
-  const [isAIResponding, setIsAIResponding] = useState(false);
+export interface ChatRef {
+  sendTextMessage: (text: string) => Promise<void>;
+}
 
-  const {
-    isRecording,
-    isVoiceLoading,
-    recordingDuration,
-    startRecording,
-    stopRecording,
-  } = useVoiceRecording();
-
-  const isDark = colorScheme === "dark";
-
-  // Update messages when props change
-  useEffect(() => {
-    setChatMessages(messages);
-  }, [messages]);
-
-  // Scroll to bottom when new messages arrive
-  const scrollToBottom = useCallback(() => {
-    if (chatMessages.length > 0) {
-      flatListRef.current?.scrollToEnd({ animated: true });
-    }
-  }, [chatMessages.length]);
-
-  const handleVoiceMessage = useCallback(
-    async (transcribedText: string) => {
-      if (!transcribedText.trim()) return;
-
-      try {
-        // Create user message
-        const userMessage: ChatMessage = {
-          id: Date.now().toString(),
-          text: transcribedText,
-          isUser: true,
-          timestamp: new Date(),
-          isVoice: true,
-        };
-
-        // Add user message to chat
-        setChatMessages((prev) => [...prev, userMessage]);
-        onMessageSent?.(userMessage);
-
-        // Set AI responding state
-        setIsAIResponding(true);
-
-        // Get AI response
-        const aiResponse = await ChatService.sendMessage(transcribedText, true);
-
-        // Create AI message
-        const aiMessage: ChatMessage = {
-          id: (Date.now() + 1).toString(),
-          text: aiResponse,
-          isUser: false,
-          timestamp: new Date(),
-        };
-
-        // Add AI message to chat
-        setChatMessages((prev) => [...prev, aiMessage]);
-        onAIResponse?.(aiMessage);
-
-        // Speak AI response
-        try {
-          await TTSService.speakText(aiResponse);
-        } catch (ttsError) {
-          console.log("TTS failed, but continuing:", ttsError);
-          // Don't stop the conversation if TTS fails
-        }
-
-        setIsAIResponding(false);
-      } catch (error) {
-        console.error("Error handling voice message:", error);
-        setIsAIResponding(false);
-      }
+const Chat = forwardRef<ChatRef, ChatProps>(
+  (
+    {
+      messages = [],
+      isLoading = false,
+      onMessageSent,
+      onAIResponse,
+      isKeyboardVisible = false,
     },
-    [onMessageSent, onAIResponse]
-  );
+    ref
+  ) => {
+    const flatListRef = useRef<FlatList>(null);
+    const colorScheme = useColorScheme();
+    const [chatMessages, setChatMessages] = useState<ChatMessage[]>(messages);
+    const [isAIResponding, setIsAIResponding] = useState(false);
 
-  const handleStopRecording = useCallback(async () => {
-    const transcribedText = await stopRecording();
-    if (transcribedText) {
-      await handleVoiceMessage(transcribedText);
-    }
-  }, [stopRecording, handleVoiceMessage]);
+    // Use the new chat mutation hook
+    const {
+      sendMessage,
+      isLoading: isChatLoading,
+      error: chatError,
+      reset: resetChatError,
+    } = useChatMutation();
 
-  const renderMessage = ({ item }: { item: ChatMessage }) => {
-    const isUser = item.isUser;
-    const messageTime = item.timestamp.toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    const {
+      isRecording,
+      isVoiceLoading,
+      recordingDuration,
+      startRecording,
+      stopRecording,
+    } = useVoiceRecording();
 
-    return (
-      <View
-        style={[
-          styles.messageContainer,
-          isUser ? styles.userMessageContainer : styles.aiMessageContainer,
-        ]}
-      >
+    const isDark = colorScheme === "dark";
+
+    // Update messages when props change
+    useEffect(() => {
+      setChatMessages(messages);
+    }, [messages]);
+
+    // Scroll to bottom when new messages arrive
+    const scrollToBottom = useCallback(() => {
+      if (chatMessages.length > 0) {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }
+    }, [chatMessages.length]);
+
+    // Reset chat error when component mounts or when starting a new message
+    useEffect(() => {
+      if (chatError) {
+        console.error("Chat error:", chatError);
+      }
+    }, [chatError]);
+
+    // Handle text messages (from text input)
+    const handleTextMessage = useCallback(
+      async (text: string) => {
+        if (!text.trim()) return;
+
+        // Reset any previous errors
+        resetChatError();
+
+        try {
+          // Create user message
+          const userMessage: ChatMessage = {
+            id: Date.now().toString(),
+            text: text,
+            isUser: true,
+            timestamp: new Date(),
+            isVoice: false,
+          };
+
+          // Add user message to chat
+          setChatMessages((prev) => [...prev, userMessage]);
+          onMessageSent?.(userMessage);
+
+          // Set AI responding state
+          setIsAIResponding(true);
+
+          // Get AI response using TanStack Query mutation
+          const aiResponse = await sendMessage(text, chatMessages, false);
+
+          // Create AI message
+          const aiMessage: ChatMessage = {
+            id: (Date.now() + 1).toString(),
+            text: aiResponse,
+            isUser: false,
+            timestamp: new Date(),
+          };
+
+          // Add AI message to chat
+          setChatMessages((prev) => [...prev, aiMessage]);
+          onAIResponse?.(aiMessage);
+
+          setIsAIResponding(false);
+        } catch (error) {
+          console.error("Error handling text message:", error);
+          setIsAIResponding(false);
+
+          // Show error message to user
+          const errorMessage: ChatMessage = {
+            id: (Date.now() + 2).toString(),
+            text:
+              error instanceof Error
+                ? error.message
+                : "I'm having trouble responding right now. Please try again.",
+            isUser: false,
+            timestamp: new Date(),
+          };
+
+          setChatMessages((prev) => [...prev, errorMessage]);
+          onAIResponse?.(errorMessage);
+        }
+      },
+      [sendMessage, chatMessages, onMessageSent, onAIResponse, resetChatError]
+    );
+
+    // Expose handleTextMessage via ref
+    useImperativeHandle(
+      ref,
+      () => ({
+        sendTextMessage: handleTextMessage,
+      }),
+      [handleTextMessage]
+    );
+
+    const handleVoiceMessage = useCallback(
+      async (transcribedText: string) => {
+        if (!transcribedText.trim()) return;
+
+        // Reset any previous errors
+        resetChatError();
+
+        try {
+          // Create user message
+          const userMessage: ChatMessage = {
+            id: Date.now().toString(),
+            text: transcribedText,
+            isUser: true,
+            timestamp: new Date(),
+            isVoice: true,
+          };
+
+          // Add user message to chat
+          setChatMessages((prev) => [...prev, userMessage]);
+          onMessageSent?.(userMessage);
+
+          // Set AI responding state
+          setIsAIResponding(true);
+
+          // Get AI response using TanStack Query mutation
+          const aiResponse = await sendMessage(
+            transcribedText,
+            chatMessages,
+            true
+          );
+
+          // Create AI message
+          const aiMessage: ChatMessage = {
+            id: (Date.now() + 1).toString(),
+            text: aiResponse,
+            isUser: false,
+            timestamp: new Date(),
+          };
+
+          // Add AI message to chat
+          setChatMessages((prev) => [...prev, aiMessage]);
+          onAIResponse?.(aiMessage);
+
+          // Speak AI response
+          try {
+            await TTSService.speakText(aiResponse);
+          } catch (ttsError) {
+            console.log("TTS failed, but continuing:", ttsError);
+            // Don't stop the conversation if TTS fails
+          }
+
+          setIsAIResponding(false);
+        } catch (error) {
+          console.error("Error handling voice message:", error);
+          setIsAIResponding(false);
+
+          // Show error message to user
+          const errorMessage: ChatMessage = {
+            id: (Date.now() + 2).toString(),
+            text:
+              error instanceof Error
+                ? error.message
+                : "I'm having trouble responding right now. Please try again.",
+            isUser: false,
+            timestamp: new Date(),
+          };
+
+          setChatMessages((prev) => [...prev, errorMessage]);
+          onAIResponse?.(errorMessage);
+        }
+      },
+      [sendMessage, chatMessages, onMessageSent, onAIResponse, resetChatError]
+    );
+
+    const handleStopRecording = useCallback(async () => {
+      const transcribedText = await stopRecording();
+      if (transcribedText) {
+        await handleVoiceMessage(transcribedText);
+      }
+    }, [stopRecording, handleVoiceMessage]);
+
+    const renderMessage = ({ item }: { item: ChatMessage }) => {
+      const isUser = item.isUser;
+      const messageTime = item.timestamp.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+
+      return (
         <View
           style={[
-            styles.messageBubble,
-            isUser
-              ? [
-                  styles.userBubble,
-                  { backgroundColor: isDark ? "#667EEA" : "#667EEA" },
-                ]
-              : [
-                  styles.aiBubble,
-                  {
-                    backgroundColor: isDark ? "#2C2C2E" : "#FFFFFF",
-                  },
-                ],
+            styles.messageContainer,
+            isUser ? styles.userMessageContainer : styles.aiMessageContainer,
           ]}
         >
-          <ThemedText
+          <View
             style={[
-              styles.messageText,
+              styles.messageBubble,
               isUser
-                ? styles.userMessageText
-                : {
-                    color: isDark ? "#FFFFFF" : "#1C1C1E",
-                  },
+                ? [
+                    styles.userBubble,
+                    { backgroundColor: isDark ? "#667EEA" : "#667EEA" },
+                  ]
+                : [
+                    styles.aiBubble,
+                    {
+                      backgroundColor: isDark ? "#2C2C2E" : "#FFFFFF",
+                    },
+                  ],
             ]}
           >
-            {item.text}
+            <ThemedText
+              style={[
+                styles.messageText,
+                isUser
+                  ? styles.userMessageText
+                  : {
+                      color: isDark ? "#FFFFFF" : "#1C1C1E",
+                    },
+              ]}
+            >
+              {item.text}
+            </ThemedText>
+
+            {item.isVoice && (
+              <View style={styles.voiceIndicator}>
+                <ThemedText style={styles.voiceIcon}>🎤</ThemedText>
+              </View>
+            )}
+          </View>
+
+          <ThemedText
+            style={[
+              styles.timestamp,
+              { color: isDark ? "#8E8E93" : "#8E8E93" },
+            ]}
+          >
+            {messageTime}
           </ThemedText>
-
-          {item.isVoice && (
-            <View style={styles.voiceIndicator}>
-              <ThemedText style={styles.voiceIcon}>🎤</ThemedText>
-            </View>
-          )}
         </View>
+      );
+    };
 
+    const renderEmptyState = () => (
+      <View style={styles.emptyStateContainer}>
         <ThemedText
-          style={[styles.timestamp, { color: isDark ? "#8E8E93" : "#8E8E93" }]}
+          style={[
+            styles.emptyStateText,
+            { color: isDark ? "#8E8E93" : "#8E8E93" },
+          ]}
         >
-          {messageTime}
+          Hi! I&apos;m your AI buddy. Tap the microphone to start a voice
+          conversation!
         </ThemedText>
       </View>
     );
-  };
 
-  const renderEmptyState = () => (
-    <View style={styles.emptyStateContainer}>
-      <ThemedText
-        style={[
-          styles.emptyStateText,
-          { color: isDark ? "#8E8E93" : "#8E8E93" },
-        ]}
-      >
-        Hi! I&apos;m your AI buddy. Tap the microphone to start a voice
-        conversation!
-      </ThemedText>
-    </View>
-  );
+    const renderLoadingIndicator = () => {
+      if (!isLoading && !isAIResponding && !isChatLoading) return null;
 
-  const renderLoadingIndicator = () => {
-    if (!isLoading && !isAIResponding) return null;
-
-    return (
-      <View style={[styles.messageContainer, styles.aiMessageContainer]}>
-        <View
-          style={[
-            styles.messageBubble,
-            styles.aiBubble,
-            {
-              backgroundColor: isDark ? "#2C2C2E" : "#FFFFFF",
-            },
-          ]}
-        >
-          <View style={styles.typingIndicator}>
-            <View style={[styles.typingDot, styles.typingDot1]} />
-            <View style={[styles.typingDot, styles.typingDot2]} />
-            <View style={[styles.typingDot, styles.typingDot3]} />
+      return (
+        <View style={[styles.messageContainer, styles.aiMessageContainer]}>
+          <View
+            style={[
+              styles.messageBubble,
+              styles.aiBubble,
+              {
+                backgroundColor: isDark ? "#2C2C2E" : "#FFFFFF",
+              },
+            ]}
+          >
+            <View style={styles.typingIndicator}>
+              <View style={[styles.typingDot, styles.typingDot1]} />
+              <View style={[styles.typingDot, styles.typingDot2]} />
+              <View style={[styles.typingDot, styles.typingDot3]} />
+            </View>
           </View>
         </View>
+      );
+    };
+
+    return (
+      <View style={styles.container}>
+        {/* Messages List */}
+        <FlatList
+          ref={flatListRef}
+          data={chatMessages}
+          renderItem={renderMessage}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.chatContainer}
+          showsVerticalScrollIndicator={false}
+          onContentSizeChange={scrollToBottom}
+          onLayout={scrollToBottom}
+          ListEmptyComponent={renderEmptyState}
+          ListFooterComponent={renderLoadingIndicator}
+        />
+
+        {/* Voice Recording Interface */}
+        <VoiceRecorder
+          isRecording={isRecording}
+          isVoiceLoading={isVoiceLoading}
+          recordingDuration={recordingDuration}
+          onStartRecording={startRecording}
+          onStopRecording={handleStopRecording}
+          isKeyboardVisible={isKeyboardVisible}
+        />
       </View>
     );
-  };
-
-  return (
-    <View style={styles.container}>
-      {/* Messages List */}
-      <FlatList
-        ref={flatListRef}
-        data={chatMessages}
-        renderItem={renderMessage}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.chatContainer}
-        showsVerticalScrollIndicator={false}
-        onContentSizeChange={scrollToBottom}
-        onLayout={scrollToBottom}
-        ListEmptyComponent={renderEmptyState}
-        ListFooterComponent={renderLoadingIndicator}
-      />
-
-      {/* Voice Recording Interface */}
-      <VoiceRecorder
-        isRecording={isRecording}
-        isVoiceLoading={isVoiceLoading}
-        recordingDuration={recordingDuration}
-        onStartRecording={startRecording}
-        onStopRecording={handleStopRecording}
-        isKeyboardVisible={isKeyboardVisible}
-      />
-    </View>
-  );
-}
+  }
+);
 
 const styles = StyleSheet.create({
   container: {
@@ -333,3 +461,7 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
 });
+
+Chat.displayName = "Chat";
+
+export default Chat;

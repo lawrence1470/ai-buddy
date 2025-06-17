@@ -429,6 +429,8 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: "bold",
     color: "#667EEA",
+    minHeight: 40,
+    lineHeight: 38,
   },
   confidenceScore: {
     fontSize: 14,

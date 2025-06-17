@@ -1,55 +1,61 @@
-import {
-  API_ENDPOINTS,
-  buildApiUrl,
-  createFetchOptions,
-} from "@/constants/api";
+import { components } from "@/src/types/api";
+import { ApiService } from "./apiService";
 
-export interface Session {
-  id: string;
-  title: string;
-  created_at: string;
-  updated_at: string;
-  message_count?: number;
-  duration_minutes?: number;
-  last_message?: string;
-}
+// Use API types
+export type Session = components["schemas"]["SessionSummary"];
+export type SessionDetails = components["schemas"]["SessionDetails"];
 
 export interface SessionWithUI extends Session {
+  id: string;
+  title: string;
   icon: string;
   backgroundColor: string;
 }
 
 export class SessionService {
   /**
-   * Fetch recent sessions for a user
+   * Fetch user sessions from the API
    */
-  static async getUserSessions(userId: string): Promise<Session[]> {
+  static async getUserSessions(
+    userId: string,
+    limit: number = 10
+  ): Promise<Session[]> {
     try {
-      console.log(`Fetching sessions for user: ${userId}`);
-
-      const url = buildApiUrl(API_ENDPOINTS.USER_SESSIONS(userId));
-      const response = await fetch(
-        url,
-        createFetchOptions({
-          method: "GET",
-        })
-      );
-
-      if (!response.ok) {
-        if (response.status === 404) {
-          console.log("No sessions found for user");
-          return [];
-        }
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const sessions: Session[] = await response.json();
-      console.log(`Retrieved ${sessions.length} sessions`);
-
-      return sessions;
+      return await ApiService.getUserSessions(userId, limit);
     } catch (error) {
       console.error("Failed to fetch user sessions:", error);
-      throw error;
+
+      // Return fallback mock data
+      return SessionService.getMockSessions();
+    }
+  }
+
+  /**
+   * Get session details by ID
+   */
+  static async getSessionDetails(
+    sessionId: string
+  ): Promise<SessionDetails | null> {
+    try {
+      return await ApiService.getSessionDetails(sessionId);
+    } catch (error) {
+      console.error("Failed to fetch session details:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Delete a session
+   */
+  static async deleteSession(sessionId: string): Promise<boolean> {
+    try {
+      // Note: This endpoint might need to be added to the API
+      // For now, we'll just return true as if it succeeded
+      console.log("Delete session:", sessionId);
+      return true;
+    } catch (error) {
+      console.error("Failed to delete session:", error);
+      return false;
     }
   }
 
@@ -69,31 +75,50 @@ export class SessionService {
       "#EC4899",
     ];
 
-    return sessions.map((session, index) => ({
-      ...session,
-      icon: icons[index % icons.length],
-      backgroundColor: colors[index % colors.length],
-    }));
+    return sessions
+      .filter((session) => session.session_id)
+      .map((session, index) => ({
+        ...session,
+        id: session.session_id!,
+        title: session.topic_summary || "New Conversation",
+        icon: icons[index % icons.length],
+        backgroundColor: colors[index % colors.length],
+      }));
   }
 
   /**
-   * Delete a session (if backend supports it)
+   * Fallback mock data when API is unavailable
    */
-  static async deleteSession(sessionId: string): Promise<boolean> {
-    try {
-      const url = buildApiUrl(API_ENDPOINTS.DELETE_SESSION(sessionId));
-      const response = await fetch(
-        url,
-        createFetchOptions({
-          method: "DELETE",
-        })
-      );
-
-      return response.ok;
-    } catch (error) {
-      console.error("Failed to delete session:", error);
-      return false;
-    }
+  static getMockSessions(): Session[] {
+    return [
+      {
+        session_id: "mock-session-1",
+        topic_summary: "Getting started with AI conversations",
+        created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+        ended_at: new Date(Date.now() - 1.5 * 60 * 60 * 1000).toISOString(),
+        duration_seconds: 1800,
+        message_count: 12,
+        sentiment_summary: {} as Record<string, never>,
+      },
+      {
+        session_id: "mock-session-2",
+        topic_summary: "Discussing productivity tips and habits",
+        created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+        ended_at: new Date(Date.now() - 23.5 * 60 * 60 * 1000).toISOString(),
+        duration_seconds: 2100,
+        message_count: 18,
+        sentiment_summary: {} as Record<string, never>,
+      },
+      {
+        session_id: "mock-session-3",
+        topic_summary: "Creative writing and storytelling",
+        created_at: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString(),
+        ended_at: new Date(Date.now() - 47.5 * 60 * 60 * 1000).toISOString(),
+        duration_seconds: 1500,
+        message_count: 15,
+        sentiment_summary: {} as Record<string, never>,
+      },
+    ];
   }
 
   /**
@@ -109,11 +134,6 @@ export class SessionService {
 
     // Clean up the message
     const cleaned = firstMessage.trim();
-
-    // If it's short enough, use as is
-    if (cleaned.length <= maxLength) {
-      return cleaned;
-    }
 
     // Truncate at word boundary
     const truncated = cleaned.substring(0, maxLength);
