@@ -3,6 +3,7 @@ import PhoneAuthModal from "@/components/PhoneAuthModal";
 import ProfileCompletionCard from "@/components/ProfileCompletionCard";
 import RecentSessions from "@/components/RecentSessions";
 import { ThemedText } from "@/components/ThemedText";
+import VoiceSearchCard from "@/components/VoiceSearchCard";
 import { useAISpeaking } from "@/hooks/useAISpeaking";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useUserProfile } from "@/hooks/useUserProfile";
@@ -170,22 +171,18 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
-        {/* Search by Voice */}
-        <Pressable
-          style={[styles.searchCard, !isSignedIn && styles.cardDisabled]}
+        {/* Choose AI Buddy */}
+        <VoiceSearchCard
+          isSignedIn={isSignedIn}
+          disabled={!isSignedIn}
           onPress={() => {
             if (!isSignedIn) {
               setShowAuthModal(true);
+            } else {
+              router.push("/ai-buddy-selection");
             }
           }}
-        >
-          <View style={styles.searchContent}>
-            <ThemedText style={styles.searchIcon}>🔍</ThemedText>
-            <ThemedText style={styles.searchText}>
-              {isSignedIn ? "Search by voice" : "Sign in to search by voice"}
-            </ThemedText>
-          </View>
-        </Pressable>
+        />
 
         {/* Recent Sessions - Only show if authenticated */}
         {isSignedIn && (
@@ -333,32 +330,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "rgba(255, 255, 255, 0.8)",
     marginTop: 4,
-  },
-  searchCard: {
-    marginHorizontal: 20,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 30,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  searchContent: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  searchIcon: {
-    fontSize: 20,
-    marginRight: 12,
-  },
-  searchText: {
-    fontSize: 16,
-    color: "#1C1C1E",
   },
 });

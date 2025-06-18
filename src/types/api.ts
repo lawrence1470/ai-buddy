@@ -4,6 +4,97 @@
  */
 
 export interface paths {
+    "/ai-buddies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 🤖 Get Available AI Buddies
+         * @description Retrieve a list of all available AI buddies with their unique voices, personalities, and characteristics. Each buddy has distinct conversation styles and specialties.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description AI buddies retrieved successfully */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AIBuddiesList"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ai-buddies/{buddy_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 🎭 Get AI Buddy Details
+         * @description Get detailed information about a specific AI buddy including voice samples, personality traits, conversation topics, and specialties.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /**
+                     * @description AI buddy identifier (oliver, luna, zara)
+                     * @example oliver
+                     */
+                    buddy_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description AI buddy details retrieved successfully */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AIBuddyDetails"];
+                    };
+                };
+                /** @description AI buddy not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/chat": {
         parameters: {
             query?: never;
@@ -15,7 +106,7 @@ export interface paths {
         put?: never;
         /**
          * 💬 AI Chat Conversation
-         * @description Send a message to the AI and receive a conversational response. Supports both text and voice interactions with conversation context for multi-turn conversations.
+         * @description Send a message to the AI and receive a conversational response. Supports both text and voice interactions with conversation context for multi-turn conversations. You can specify a buddy_id to get responses in a specific AI buddy's voice and personality.
          */
         post: {
             parameters: {
@@ -318,7 +409,121 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AIBuddiesList: {
+            ai_buddies?: components["schemas"]["AIBuddy"][];
+            /** @example true */
+            success?: boolean;
+            /** @example 3 */
+            total_buddies?: number;
+            /** @example Use the buddy ID in chat requests to get responses in their unique voice and personality */
+            usage_note?: string;
+        };
+        AIBuddy: {
+            avatar?: {
+                /** @example [
+                 *       "#2C3E50",
+                 *       "#34495E"
+                 *     ] */
+                color_scheme?: string[];
+                /** @example 🎩 */
+                emoji?: string;
+            };
+            /** @example 🎩 Oliver - The British Gentleman */
+            display_name?: string;
+            /** @example oliver */
+            id?: string;
+            /** @example Oliver */
+            name?: string;
+            personality?: {
+                /** @example Thoughtful and eloquent */
+                conversation_style?: string;
+                /** @example A charming British gentleman with a passion for literature */
+                description?: string;
+                /** @example ENFJ */
+                mbti_type?: string;
+                /** @example [
+                 *       "literature",
+                 *       "philosophy"
+                 *     ] */
+                specialties?: string[];
+                /** @example [
+                 *       "empathetic",
+                 *       "articulate"
+                 *     ] */
+                traits?: string[];
+            };
+            /** @example [
+             *       "I say, that's rather fascinating"
+             *     ] */
+            sample_responses?: string[];
+            voice?: {
+                /** @example british */
+                accent?: string;
+                /** @example Refined British accent with articulate pronunciation */
+                description?: string;
+                /** @example male */
+                gender?: string;
+                /** @example medium-low */
+                pitch?: string;
+                /** @example measured */
+                speaking_rate?: string;
+                /** @example sophisticated */
+                tone?: string;
+            };
+        };
+        AIBuddyDetails: {
+            buddy?: {
+                /** @example 2024-01-15T10:00:00Z */
+                created_at?: string;
+                /** @example 🎩 Oliver - The British Gentleman */
+                display_name?: string;
+                /** @example oliver */
+                id?: string;
+                /** @example 2024-01-15T14:30:00Z */
+                last_updated?: string;
+                /** @example Oliver */
+                name?: string;
+                personality?: {
+                    /** @example [
+                     *       "Deep conversations"
+                     *     ] */
+                    best_for?: string[];
+                    /** @example [
+                     *       "Classical literature"
+                     *     ] */
+                    conversation_topics?: string[];
+                    /** @example The Protagonist - A natural leader */
+                    full_description?: string;
+                    /** @example ENFJ */
+                    mbti_type?: string;
+                    /** @example [
+                     *       "Deep listening"
+                     *     ] */
+                    strengths?: string[];
+                };
+                voice?: {
+                    /** @example british */
+                    accent?: string;
+                    /** @example male */
+                    gender?: string;
+                    /** @example sophisticated */
+                    tone?: string;
+                    /** @example [
+                     *       "Good evening, how may I assist?"
+                     *     ] */
+                    voice_samples?: string[];
+                };
+            };
+            /** @example true */
+            success?: boolean;
+        };
         ChatRequest: {
+            /**
+             * @description AI buddy identifier for personality-specific responses
+             * @example oliver
+             * @enum {string}
+             */
+            buddy_id?: "oliver" | "luna" | "zara";
             /**
              * @description Previous conversation messages for context
              * @example [
