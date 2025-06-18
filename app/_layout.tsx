@@ -72,6 +72,14 @@ export default function RootLayout() {
                 }}
               />
               <Stack.Screen
+                name="ai-buddy-selection"
+                options={{
+                  headerShown: false,
+                  gestureEnabled: true,
+                  animation: "slide_from_bottom",
+                }}
+              />
+              <Stack.Screen
                 name="profile-setup"
                 options={{
                   headerShown: false,

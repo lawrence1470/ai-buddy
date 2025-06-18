@@ -1,9 +1,11 @@
+import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useRef } from "react";
 import { Animated, StyleSheet, View } from "react-native";
 
 interface OrbProps {
   size?: number;
   color?: string;
+  colors?: string[]; // For gradient support from AI buddy color_scheme
   animated?: boolean;
   isSpeaking?: boolean;
 }
@@ -12,6 +14,7 @@ interface OrbProps {
 export default function Orb({
   size = 200,
   color = "#667EEA",
+  colors,
   animated = true,
   isSpeaking = false,
 }: OrbProps) {
@@ -25,6 +28,10 @@ export default function Orb({
   const wave1Anim = useRef(new Animated.Value(1)).current;
   const wave2Anim = useRef(new Animated.Value(1)).current;
   const wave3Anim = useRef(new Animated.Value(1)).current;
+
+  // Determine colors to use
+  const orbColors = colors && colors.length >= 2 ? colors : [color, color];
+  const primaryColor = colors && colors.length > 0 ? colors[0] : color;
 
   useEffect(() => {
     if (!animated) return;
@@ -197,6 +204,48 @@ export default function Orb({
   const currentScale = isSpeaking ? speakingScaleAnim : scaleAnim;
   const currentOpacity = isSpeaking ? 0.9 : opacityAnim;
 
+  const OrbContent = ({ children }: { children: React.ReactNode }) => {
+    if (colors && colors.length >= 2) {
+      return (
+        <LinearGradient
+          colors={orbColors as [string, string, ...string[]]}
+          style={[
+            styles.orb,
+            {
+              width: size,
+              height: size,
+              shadowColor: isSpeaking ? primaryColor : "#667EEA",
+              shadowRadius: isSpeaking ? 30 : 20,
+              shadowOpacity: isSpeaking ? 0.8 : 0.6,
+            },
+          ]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          {children}
+        </LinearGradient>
+      );
+    }
+
+    return (
+      <View
+        style={[
+          styles.orb,
+          {
+            width: size,
+            height: size,
+            backgroundColor: primaryColor,
+            shadowColor: isSpeaking ? primaryColor : "#667EEA",
+            shadowRadius: isSpeaking ? 30 : 20,
+            shadowOpacity: isSpeaking ? 0.8 : 0.6,
+          },
+        ]}
+      >
+        {children}
+      </View>
+    );
+  };
+
   return (
     <View style={[styles.container, { width: size, height: size }]}>
       {/* Speaking wave effects */}
@@ -209,7 +258,7 @@ export default function Orb({
                 width: size * 1.2,
                 height: size * 1.2,
                 borderRadius: size * 0.6,
-                borderColor: color,
+                borderColor: primaryColor,
                 transform: [{ scale: wave1Anim }],
                 opacity: speakingGlowAnim.interpolate({
                   inputRange: [0, 1],
@@ -225,7 +274,7 @@ export default function Orb({
                 width: size * 1.4,
                 height: size * 1.4,
                 borderRadius: size * 0.7,
-                borderColor: color,
+                borderColor: primaryColor,
                 transform: [{ scale: wave2Anim }],
                 opacity: speakingGlowAnim.interpolate({
                   inputRange: [0, 1],
@@ -241,7 +290,7 @@ export default function Orb({
                 width: size * 1.6,
                 height: size * 1.6,
                 borderRadius: size * 0.8,
-                borderColor: color,
+                borderColor: primaryColor,
                 transform: [{ scale: wave3Anim }],
                 opacity: speakingGlowAnim.interpolate({
                   inputRange: [0, 1],
@@ -254,44 +303,37 @@ export default function Orb({
       )}
 
       <Animated.View
-        style={[
-          styles.orb,
-          {
-            width: size,
-            height: size,
-            backgroundColor: color,
-            transform: [{ scale: currentScale }, { rotate: spin }],
-            opacity: currentOpacity,
-            shadowColor: isSpeaking ? color : "#667EEA",
-            shadowRadius: isSpeaking ? 30 : 20,
-            shadowOpacity: isSpeaking ? 0.8 : 0.6,
-          },
-        ]}
+        style={{
+          transform: [{ scale: currentScale }, { rotate: spin }],
+          opacity: currentOpacity,
+        }}
       >
-        {/* Inner glow effect */}
-        <View style={[styles.innerGlow, { backgroundColor: color }]} />
+        <OrbContent>
+          {/* Inner glow effect */}
+          <View style={[styles.innerGlow, { backgroundColor: primaryColor }]} />
 
-        {/* Outer glow effect */}
-        <View style={[styles.outerGlow, { backgroundColor: color }]} />
+          {/* Outer glow effect */}
+          <View style={[styles.outerGlow, { backgroundColor: primaryColor }]} />
 
-        {/* Highlight */}
-        <View style={styles.highlight} />
+          {/* Highlight */}
+          <View style={styles.highlight} />
 
-        {/* Speaking indicator */}
-        {isSpeaking && (
-          <Animated.View
-            style={[
-              styles.speakingIndicator,
-              {
-                backgroundColor: color,
-                opacity: speakingGlowAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0.3, 0.8],
-                }),
-              },
-            ]}
-          />
-        )}
+          {/* Speaking indicator */}
+          {isSpeaking && (
+            <Animated.View
+              style={[
+                styles.speakingIndicator,
+                {
+                  backgroundColor: primaryColor,
+                  opacity: speakingGlowAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.3, 0.8],
+                  }),
+                },
+              ]}
+            />
+          )}
+        </OrbContent>
       </Animated.View>
     </View>
   );

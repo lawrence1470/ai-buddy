@@ -1,8 +1,10 @@
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { AIBuddy } from "@/services/aiBuddyService";
+import { TTSService } from "@/services/ttsService";
 import { LinearGradient } from "expo-linear-gradient";
-import React from "react";
+import React, { useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
+import Orb from "./Orb";
 import { ThemedText } from "./ThemedText";
 
 interface AIBuddyCardProps {
@@ -18,9 +20,59 @@ export default function AIBuddyCard({
 }: AIBuddyCardProps) {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
+  const [isPlaying, setIsPlaying] = useState(false);
 
   const handlePress = () => {
     onPress?.(buddy);
+  };
+
+  const handlePlayVoice = async () => {
+    if (isPlaying) return;
+
+    try {
+      setIsPlaying(true);
+
+      // Get a sample response to play
+      const sampleText =
+        buddy.sample_responses?.[0] ||
+        `Hello! I'm ${buddy.name}. ${buddy.personality?.description}`;
+
+      // Debug: Log detailed buddy data structure
+      console.log("=== AIBuddyCard Debug ===");
+      console.log("Buddy name:", buddy.name);
+      console.log("Buddy voice object:", buddy.voice);
+
+      // Check for both possible voice ID fields
+      const voiceData = buddy.voice as any;
+      const voiceId = voiceData?.elevenlabs_voice_id || voiceData?.voice_id;
+
+      console.log(
+        "Voice ID (elevenlabs_voice_id):",
+        voiceData?.elevenlabs_voice_id
+      );
+      console.log("Voice ID (voice_id):", voiceData?.voice_id);
+      console.log("Selected voice ID:", voiceId);
+      console.log("========================");
+
+      // Check if voice data is available
+      if (!voiceId) {
+        console.warn(
+          "⚠️ No elevenlabs_voice_id available from backend for",
+          buddy.name
+        );
+        console.warn(
+          "Voice sample cannot be played without backend voice configuration"
+        );
+        return;
+      }
+
+      // Play the voice sample using the buddy's voice characteristics
+      await TTSService.speakText(sampleText, buddy);
+    } catch (error) {
+      console.error("Error playing voice sample:", error);
+    } finally {
+      setIsPlaying(false);
+    }
   };
 
   const getGradientColors = (): [string, string] => {
@@ -44,7 +96,7 @@ export default function AIBuddyCard({
       ]}
       onPress={handlePress}
     >
-      {/* Gradient Header */}
+      {/* Header with Orb */}
       <LinearGradient
         colors={getGradientColors()}
         style={styles.header}
@@ -52,10 +104,45 @@ export default function AIBuddyCard({
         end={{ x: 1, y: 1 }}
       >
         <View style={styles.avatarContainer}>
-          <ThemedText style={styles.avatar}>
-            {buddy.avatar?.emoji || "🤖"}
-          </ThemedText>
+          <Orb
+            size={60}
+            colors={buddy.avatar?.color_scheme}
+            color={buddy.avatar?.color_scheme?.[0] || "#667EEA"}
+            animated={true}
+            isSpeaking={isPlaying}
+          />
         </View>
+
+        {/* Play Button */}
+        <Pressable
+          style={[
+            styles.playButton,
+            {
+              backgroundColor: isPlaying
+                ? "#10B981"
+                : (buddy.voice as any)?.elevenlabs_voice_id ||
+                  (buddy.voice as any)?.voice_id
+                ? "rgba(255, 255, 255, 0.3)"
+                : "rgba(255, 0, 0, 0.3)", // Red background if no voice
+            },
+          ]}
+          onPress={handlePlayVoice}
+          disabled={
+            isPlaying ||
+            (!(buddy.voice as any)?.elevenlabs_voice_id &&
+              !(buddy.voice as any)?.voice_id)
+          }
+        >
+          <ThemedText style={styles.playButtonText}>
+            {isPlaying
+              ? "🔊"
+              : !(buddy.voice as any)?.elevenlabs_voice_id &&
+                !(buddy.voice as any)?.voice_id
+              ? "🚫"
+              : "▶️"}
+          </ThemedText>
+        </Pressable>
+
         {isSelected && (
           <View style={styles.selectedBadge}>
             <ThemedText style={styles.selectedBadgeText}>✓</ThemedText>
@@ -121,7 +208,7 @@ export default function AIBuddyCard({
                 { color: isDark ? "#D1D5DB" : "#4B5563" },
               ]}
             >
-              " {`"${buddy.sample_responses[0]}"`}"
+              &ldquo;{buddy.sample_responses[0]}&rdquo;
             </ThemedText>
           </View>
         )}
@@ -151,21 +238,43 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.98 }],
   },
   header: {
-    height: 100,
+    height: 120,
     justifyContent: "center",
     alignItems: "center",
     position: "relative",
   },
   avatarContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
     justifyContent: "center",
     alignItems: "center",
   },
   avatar: {
     fontSize: 28,
+  },
+  playButton: {
+    position: "absolute",
+    top: 12,
+    left: 12,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  playButtonText: {
+    fontSize: 14,
+    color: "#FFFFFF",
   },
   selectedBadge: {
     position: "absolute",

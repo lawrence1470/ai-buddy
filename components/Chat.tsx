@@ -1,5 +1,6 @@
 import { useChatMutation } from "@/hooks/useChat";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { useSelectedBuddy } from "@/hooks/useSelectedBuddy";
 import { useVoiceRecording } from "@/hooks/useVoiceRecording";
 import { ChatMessage } from "@/services/chatService";
 import { TTSService } from "@/services/ttsService";
@@ -46,6 +47,13 @@ const Chat = forwardRef<ChatRef, ChatProps>(
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>(messages);
     const [isAIResponding, setIsAIResponding] = useState(false);
 
+    // Get selected AI buddy
+    const {
+      selectedBuddy,
+      loading: buddyLoading,
+      error: buddyError,
+    } = useSelectedBuddy();
+
     // Use the new chat mutation hook
     const {
       sendMessage,
@@ -68,6 +76,17 @@ const Chat = forwardRef<ChatRef, ChatProps>(
     useEffect(() => {
       setChatMessages(messages);
     }, [messages]);
+
+    // Log buddy selection
+    useEffect(() => {
+      if (selectedBuddy) {
+        console.log(
+          "Selected AI buddy:",
+          selectedBuddy.name,
+          selectedBuddy.voice
+        );
+      }
+    }, [selectedBuddy]);
 
     // Scroll to bottom when new messages arrive
     const scrollToBottom = useCallback(() => {
@@ -108,8 +127,13 @@ const Chat = forwardRef<ChatRef, ChatProps>(
           // Set AI responding state
           setIsAIResponding(true);
 
-          // Get AI response using TanStack Query mutation
-          const aiResponse = await sendMessage(text, chatMessages, false);
+          // Get AI response using TanStack Query mutation with buddy_id
+          const aiResponse = await sendMessage(
+            text,
+            chatMessages,
+            false,
+            selectedBuddy?.id
+          );
 
           // Create AI message
           const aiMessage: ChatMessage = {
@@ -143,7 +167,14 @@ const Chat = forwardRef<ChatRef, ChatProps>(
           onAIResponse?.(errorMessage);
         }
       },
-      [sendMessage, chatMessages, onMessageSent, onAIResponse, resetChatError]
+      [
+        sendMessage,
+        chatMessages,
+        onMessageSent,
+        onAIResponse,
+        resetChatError,
+        selectedBuddy?.id,
+      ]
     );
 
     // Expose handleTextMessage via ref
@@ -179,11 +210,12 @@ const Chat = forwardRef<ChatRef, ChatProps>(
           // Set AI responding state
           setIsAIResponding(true);
 
-          // Get AI response using TanStack Query mutation
+          // Get AI response using TanStack Query mutation with buddy_id
           const aiResponse = await sendMessage(
             transcribedText,
             chatMessages,
-            true
+            true,
+            selectedBuddy?.id
           );
 
           // Create AI message
@@ -198,9 +230,9 @@ const Chat = forwardRef<ChatRef, ChatProps>(
           setChatMessages((prev) => [...prev, aiMessage]);
           onAIResponse?.(aiMessage);
 
-          // Speak AI response
+          // Speak AI response with buddy's voice characteristics
           try {
-            await TTSService.speakText(aiResponse);
+            await TTSService.speakText(aiResponse, selectedBuddy || undefined);
           } catch (ttsError) {
             console.log("TTS failed, but continuing:", ttsError);
             // Don't stop the conversation if TTS fails
@@ -226,7 +258,14 @@ const Chat = forwardRef<ChatRef, ChatProps>(
           onAIResponse?.(errorMessage);
         }
       },
-      [sendMessage, chatMessages, onMessageSent, onAIResponse, resetChatError]
+      [
+        sendMessage,
+        chatMessages,
+        onMessageSent,
+        onAIResponse,
+        resetChatError,
+        selectedBuddy,
+      ]
     );
 
     const handleStopRecording = useCallback(async () => {
@@ -306,9 +345,23 @@ const Chat = forwardRef<ChatRef, ChatProps>(
             { color: isDark ? "#8E8E93" : "#8E8E93" },
           ]}
         >
-          Hi! I&apos;m your AI buddy. Tap the microphone to start a voice
-          conversation!
+          {selectedBuddy
+            ? `Hi! I&apos;m ${selectedBuddy.name}. ${
+                selectedBuddy.personality?.description ||
+                "Tap the microphone to start our conversation!"
+              }`
+            : "Hi! I&apos;m your AI buddy. Tap the microphone to start a voice conversation!"}
         </ThemedText>
+        {buddyError && (
+          <ThemedText
+            style={[
+              styles.errorText,
+              { color: isDark ? "#FF6B6B" : "#DC2626", marginTop: 8 },
+            ]}
+          >
+            Note: Using default voice (couldn't load your selected buddy)
+          </ThemedText>
+        )}
       </View>
     );
 
@@ -386,6 +439,11 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 24,
     marginBottom: 30,
+  },
+  errorText: {
+    fontSize: 14,
+    textAlign: "center",
+    lineHeight: 20,
   },
   messageContainer: {
     marginVertical: 6,

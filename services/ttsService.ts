@@ -1,4 +1,7 @@
+import { components } from "@/src/types/api";
 import { Audio } from "expo-av";
+
+type AIBuddy = components["schemas"]["AIBuddy"];
 
 type SpeakingStateCallback = (isSpeaking: boolean) => void;
 
@@ -23,7 +26,7 @@ export class TTSService {
     });
   }
 
-  static async speakText(text: string): Promise<void> {
+  static async speakText(text: string, buddy?: AIBuddy): Promise<void> {
     try {
       // Notify that speaking is starting
       this.notifySpeakingStateChange(true);
@@ -34,23 +37,59 @@ export class TTSService {
         this.sound = null;
       }
 
-      // Generate speech using OpenAI TTS
-      const response = await fetch("https://api.openai.com/v1/audio/speech", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.EXPO_PUBLIC_OPENAI_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "tts-1",
-          input: text,
-          voice: "alloy", // You can change this to: alloy, echo, fable, onyx, nova, shimmer
-          response_format: "mp3",
-        }),
+      // Get voice_id from backend buddy data - no fallback, must come from backend
+      // Backend returns elevenlabs_voice_id, not voice_id (TypeScript types are incomplete)
+      const voiceData = buddy?.voice as any;
+      const voiceId = voiceData?.elevenlabs_voice_id || voiceData?.voice_id;
+
+      if (!voiceId) {
+        throw new Error(
+          "No elevenlabs_voice_id provided from backend buddy data"
+        );
+      }
+
+      console.log("TTS Debug - Buddy data:", {
+        name: buddy?.name,
+        voice: buddy?.voice,
+        voiceId: voiceId,
+        accent: buddy?.voice?.accent,
+        hasVoiceId: !!buddy?.voice?.voice_id,
       });
 
+      console.log(
+        `Using Eleven Labs voice: ${voiceId} for buddy: ${
+          buddy?.name || "default"
+        } (accent: ${buddy?.voice?.accent || "unknown"})`
+      );
+
+      // Generate speech using Eleven Labs TTS
+      const response = await fetch(
+        `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+        {
+          method: "POST",
+          headers: {
+            "xi-api-key": process.env.EXPO_PUBLIC_ELEVENLABS_API_KEY || "",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            text: text,
+            model_id: "eleven_monolingual_v1",
+            voice_settings: {
+              stability: 0.5,
+              similarity_boost: 0.8,
+            },
+          }),
+        }
+      );
+
       if (!response.ok) {
-        throw new Error(`TTS API error: ${response.status}`);
+        console.error(
+          `Eleven Labs TTS API error: ${response.status} for voice ${voiceId}`
+        );
+
+        // Don't fallback to any voice - all voice data must come from backend
+
+        throw new Error(`Eleven Labs TTS API error: ${response.status}`);
       }
 
       // Get the audio data as blob

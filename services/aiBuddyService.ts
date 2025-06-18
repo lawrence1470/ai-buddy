@@ -1,10 +1,12 @@
+import { API_CONFIG } from "@/constants/api";
 import { components } from "@/src/types/api";
 
 type AIBuddy = components["schemas"]["AIBuddy"];
 type AIBuddiesList = components["schemas"]["AIBuddiesList"];
 type AIBuddyDetails = components["schemas"]["AIBuddyDetails"];
-
-const API_BASE_URL = process.env.API_BASE_URL || "https://api.example.com"; // Update with your actual API URL
+type SelectedBuddyResponse = components["schemas"]["SelectedBuddyResponse"];
+type SelectBuddyRequest = components["schemas"]["SelectBuddyRequest"];
+type SelectBuddyResponse = components["schemas"]["SelectBuddyResponse"];
 
 export class AIBuddyService {
   /**
@@ -12,7 +14,13 @@ export class AIBuddyService {
    */
   static async getAIBuddies(): Promise<AIBuddy[]> {
     try {
-      const response = await fetch(`${API_BASE_URL}/ai-buddies`, {
+      console.log("Fetching AI buddies from backend:", API_CONFIG.BASE_URL);
+
+      if (!API_CONFIG.BASE_URL) {
+        throw new Error("API_CONFIG.BASE_URL not configured");
+      }
+
+      const response = await fetch(`${API_CONFIG.BASE_URL}/ai-buddies`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -24,11 +32,20 @@ export class AIBuddyService {
       }
 
       const data: AIBuddiesList = await response.json();
+
+      // Debug: Log what the backend returned
+      console.log("=== Backend Response Debug ===");
+      console.log("Backend returned:", JSON.stringify(data, null, 2));
+      console.log("Number of buddies:", data.ai_buddies?.length || 0);
+      if (data.ai_buddies && data.ai_buddies.length > 0) {
+        console.log("First buddy voice data:", data.ai_buddies[0].voice);
+      }
+      console.log("==============================");
+
       return data.ai_buddies || [];
     } catch (error) {
-      console.error("Error fetching AI buddies:", error);
-      // Return fallback data for development
-      return this.getFallbackBuddies();
+      console.error("Error fetching AI buddies from backend:", error);
+      throw error;
     }
   }
 
@@ -37,12 +54,19 @@ export class AIBuddyService {
    */
   static async getAIBuddyDetails(buddyId: string): Promise<AIBuddy | null> {
     try {
-      const response = await fetch(`${API_BASE_URL}/ai-buddies/${buddyId}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      if (!API_CONFIG.BASE_URL) {
+        throw new Error("API_CONFIG.BASE_URL not configured");
+      }
+
+      const response = await fetch(
+        `${API_CONFIG.BASE_URL}/ai-buddies/${buddyId}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`Failed to fetch AI buddy details: ${response.status}`);
@@ -51,111 +75,135 @@ export class AIBuddyService {
       const data: AIBuddyDetails = await response.json();
       return data.buddy || null;
     } catch (error) {
-      console.error("Error fetching AI buddy details:", error);
-      return null;
+      console.error("Error fetching AI buddy details from backend:", error);
+      throw error;
     }
   }
 
   /**
-   * Fallback data for development/offline use
+   * Get the user's selected AI buddy from the backend
    */
-  private static getFallbackBuddies(): AIBuddy[] {
-    return [
-      {
-        id: "oliver",
-        name: "Oliver",
-        display_name: "🎩 Oliver - The British Gentleman",
-        avatar: {
-          emoji: "🎩",
-          color_scheme: ["#2C3E50", "#34495E"],
-        },
-        personality: {
-          description:
-            "A charming British gentleman with a passion for literature",
-          mbti_type: "ENFJ",
-          conversation_style: "Thoughtful and eloquent",
-          traits: ["empathetic", "articulate", "sophisticated", "wise"],
-          specialties: ["literature", "philosophy", "history", "culture"],
-        },
-        voice: {
-          gender: "male",
-          accent: "british",
-          tone: "sophisticated",
-          pitch: "medium-low",
-          speaking_rate: "measured",
-          description: "Refined British accent with articulate pronunciation",
-        },
-        sample_responses: [
-          "I say, that's rather fascinating",
-          "How delightfully intriguing!",
-          "Quite right, old chap",
-        ],
-      },
-      {
-        id: "luna",
-        name: "Luna",
-        display_name: "🌙 Luna - The Creative Dreamer",
-        avatar: {
-          emoji: "🌙",
-          color_scheme: ["#8E44AD", "#9B59B6"],
-        },
-        personality: {
-          description: "A creative and intuitive dreamer with artistic flair",
-          mbti_type: "INFP",
-          conversation_style: "Imaginative and inspiring",
-          traits: ["creative", "empathetic", "intuitive", "artistic"],
-          specialties: ["art", "creativity", "psychology", "spirituality"],
-        },
-        voice: {
-          gender: "female",
-          accent: "american",
-          tone: "warm",
-          pitch: "medium",
-          speaking_rate: "flowing",
-          description: "Gentle, warm voice with creative expression",
-        },
-        sample_responses: [
-          "Oh, what a beautiful way to think about it!",
-          "I can imagine the colors swirling in my mind",
-          "That sparks such wonderful creativity!",
-        ],
-      },
-      {
-        id: "zara",
-        name: "Zara",
-        display_name: "⚡ Zara - The Tech Innovator",
-        avatar: {
-          emoji: "⚡",
-          color_scheme: ["#E74C3C", "#C0392B"],
-        },
-        personality: {
-          description: "A brilliant tech innovator with endless energy",
-          mbti_type: "ENTP",
-          conversation_style: "Dynamic and forward-thinking",
-          traits: ["innovative", "energetic", "analytical", "ambitious"],
-          specialties: [
-            "technology",
-            "innovation",
-            "problem-solving",
-            "future",
-          ],
-        },
-        voice: {
-          gender: "female",
-          accent: "american",
-          tone: "energetic",
-          pitch: "medium-high",
-          speaking_rate: "quick",
-          description: "Energetic, confident voice with tech enthusiasm",
-        },
-        sample_responses: [
-          "That's exactly the kind of disruption we need!",
-          "Let's think outside the box on this one",
-          "The possibilities are absolutely endless!",
-        ],
-      },
-    ];
+  static async getUserSelectedBuddy(userId: string): Promise<AIBuddy | null> {
+    try {
+      if (!API_CONFIG.BASE_URL) {
+        throw new Error("API_CONFIG.BASE_URL not configured");
+      }
+
+      const response = await fetch(
+        `${API_CONFIG.BASE_URL}/users/${userId}/selected-buddy`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch selected buddy: ${response.status}`);
+      }
+
+      const data: SelectedBuddyResponse = await response.json();
+
+      // If we have buddy details, return them
+      if (data.buddy_details) {
+        // Convert the buddy details to a full AIBuddy object
+        const fullBuddy = await this.getAIBuddyDetails(
+          data.selected_buddy || "oliver"
+        );
+        return fullBuddy;
+      }
+
+      // Get the buddy by ID
+      if (data.selected_buddy) {
+        return this.getAIBuddyDetails(data.selected_buddy);
+      }
+
+      return null;
+    } catch (error) {
+      console.error(
+        "Error fetching user's selected buddy from backend:",
+        error
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Set the user's selected AI buddy
+   */
+  static async setUserSelectedBuddy(
+    userId: string,
+    buddyId: string
+  ): Promise<boolean> {
+    try {
+      if (!API_CONFIG.BASE_URL) {
+        throw new Error("API_CONFIG.BASE_URL not configured");
+      }
+
+      const requestBody: SelectBuddyRequest = {
+        buddy_id: buddyId as any, // The API expects specific buddy IDs
+      };
+
+      // Debug: Log the request details
+      console.log("=== AIBuddyService.setUserSelectedBuddy Debug ===");
+      console.log(
+        "API URL:",
+        `${API_CONFIG.BASE_URL}/users/${userId}/select-buddy`
+      );
+      console.log("Request Body:", JSON.stringify(requestBody, null, 2));
+      console.log("User ID:", userId);
+      console.log("Buddy ID:", buddyId);
+      console.log("===============================================");
+
+      const response = await fetch(
+        `${API_CONFIG.BASE_URL}/users/${userId}/select-buddy`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(requestBody),
+        }
+      );
+
+      // Debug: Log response details
+      console.log("Response Status:", response.status);
+      console.log("Response OK:", response.ok);
+
+      if (!response.ok) {
+        // Try to get the response body for more details
+        let errorDetails = "";
+        try {
+          const errorBody = await response.text();
+          errorDetails = errorBody;
+          console.log("Error Response Body:", errorBody);
+        } catch (e) {
+          console.log("Could not read error response body");
+        }
+
+        throw new Error(
+          `Failed to set selected buddy: ${response.status}${
+            errorDetails ? ` - ${errorDetails}` : ""
+          }`
+        );
+      }
+
+      const data: SelectBuddyResponse = await response.json();
+      console.log("Success Response:", JSON.stringify(data, null, 2));
+      return data.success || false;
+    } catch (error) {
+      console.error("Error setting user's selected buddy:", error);
+      throw error;
+    }
   }
 }
 
-export type { AIBuddiesList, AIBuddy, AIBuddyDetails };
+export type {
+  AIBuddiesList,
+  AIBuddy,
+  AIBuddyDetails,
+  SelectBuddyRequest,
+  SelectBuddyResponse,
+  SelectedBuddyResponse,
+};

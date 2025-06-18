@@ -6,11 +6,13 @@ import { ThemedText } from "@/components/ThemedText";
 import VoiceSearchCard from "@/components/VoiceSearchCard";
 import { useAISpeaking } from "@/hooks/useAISpeaking";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { useSelectedBuddy } from "@/hooks/useSelectedBuddy";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useAuth, useUser } from "@clerk/clerk-expo";
 import { router } from "expo-router";
 import { useState } from "react";
 import {
+  Alert,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -28,13 +30,41 @@ export default function HomeScreen() {
   // Get user profile from Supabase
   const { data: userProfile } = useUserProfile();
 
+  // Get user's selected buddy from backend
+  const {
+    data: selectedBuddy,
+    isLoading: isLoadingBuddy,
+    error: buddyError,
+  } = useSelectedBuddy();
+
   const isDark = colorScheme === "dark";
+
+  // Check if user can start chatting (signed in AND has selected a buddy)
+  const canStartChat =
+    isSignedIn && selectedBuddy !== null && selectedBuddy !== undefined;
+  const needsBuddySelection = isSignedIn && !selectedBuddy && !isLoadingBuddy;
 
   const handleNewChat = () => {
     if (!isSignedIn) {
       setShowAuthModal(true);
       return;
     }
+
+    if (!selectedBuddy) {
+      Alert.alert(
+        "Select an AI Buddy First",
+        "Please choose an AI buddy before starting a chat. Each buddy has a unique personality and voice!",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Choose Buddy",
+            onPress: () => router.push("/ai-buddy-selection"),
+          },
+        ]
+      );
+      return;
+    }
+
     router.push("/new-chat");
   };
 
@@ -43,6 +73,22 @@ export default function HomeScreen() {
       setShowAuthModal(true);
       return;
     }
+
+    if (!selectedBuddy) {
+      Alert.alert(
+        "Select an AI Buddy First",
+        "Please choose an AI buddy before starting a conversation. Each buddy has a unique personality and voice!",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Choose Buddy",
+            onPress: () => router.push("/ai-buddy-selection"),
+          },
+        ]
+      );
+      return;
+    }
+
     router.push("/new-chat");
   };
 
@@ -78,6 +124,30 @@ export default function HomeScreen() {
     }
 
     return "Hello there";
+  };
+
+  const getSubtitle = () => {
+    if (!isSignedIn) {
+      return "Sign in to get started";
+    }
+
+    if (isLoadingBuddy) {
+      return "Loading your AI buddy...";
+    }
+
+    if (buddyError) {
+      return "Error loading buddy data";
+    }
+
+    if (needsBuddySelection) {
+      return "Choose an AI buddy to start chatting";
+    }
+
+    if (selectedBuddy) {
+      return `Ready to chat with ${selectedBuddy.name}`;
+    }
+
+    return "Make your day easy with AI";
   };
 
   return (
@@ -118,9 +188,7 @@ export default function HomeScreen() {
                     { color: isDark ? "#8E8E93" : "#8E8E93" },
                   ]}
                 >
-                  {isSignedIn
-                    ? "Make your day easy with AI"
-                    : "Sign in to get started"}
+                  {getSubtitle()}
                 </ThemedText>
               </View>
             </View>
@@ -136,7 +204,7 @@ export default function HomeScreen() {
             style={[
               styles.card,
               styles.newChatCard,
-              !isSignedIn && styles.cardDisabled,
+              !canStartChat && styles.cardDisabled,
             ]}
             onPress={handleNewChat}
           >
@@ -154,19 +222,30 @@ export default function HomeScreen() {
                 Sign in required
               </ThemedText>
             )}
+            {needsBuddySelection && (
+              <ThemedText style={styles.cardDisabledText}>
+                Choose an AI buddy first
+              </ThemedText>
+            )}
           </Pressable>
 
           <Pressable
             style={[
               styles.card,
               styles.talkCard,
-              !isSignedIn && styles.cardDisabled,
+              !canStartChat && styles.cardDisabled,
             ]}
             onPress={handleTalkWithAI}
           >
             <ThemedText style={styles.cardTitle}>Talk with AI Buddy</ThemedText>
             <ThemedText style={styles.cardSubtitle}>
-              {isSignedIn ? "Let's try it now" : "Sign in to start talking"}
+              {!isSignedIn
+                ? "Sign in to start talking"
+                : needsBuddySelection
+                ? "Choose a buddy to start"
+                : selectedBuddy
+                ? `Ready to chat with ${selectedBuddy.name}!`
+                : "Let's try it now"}
             </ThemedText>
           </Pressable>
         </View>

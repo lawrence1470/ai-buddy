@@ -1,12 +1,16 @@
+import AIBuddyCard from "@/components/AIBuddyCard";
 import { ThemedText } from "@/components/ThemedText";
 import { useAIBuddies } from "@/hooks/useAIBuddies";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { useSelectBuddy } from "@/hooks/useSelectBuddy";
 import { AIBuddy } from "@/services/aiBuddyService";
+import { useUser } from "@clerk/clerk-expo";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Pressable,
   SafeAreaView,
@@ -14,71 +18,14 @@ import {
   View,
 } from "react-native";
 
-// Simple buddy card component inline to avoid linter issues
-function BuddyCard({
-  buddy,
-  onPress,
-  isSelected,
-}: {
-  buddy: AIBuddy;
-  onPress: (buddy: AIBuddy) => void;
-  isSelected: boolean;
-}) {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
-
-  return (
-    <Pressable
-      style={[
-        styles.buddyCard,
-        isSelected && styles.selectedCard,
-        { backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF" },
-      ]}
-      onPress={() => onPress(buddy)}
-    >
-      <View style={styles.cardHeader}>
-        <ThemedText style={styles.emoji}>
-          {buddy.avatar?.emoji || "🤖"}
-        </ThemedText>
-        {isSelected && (
-          <View style={styles.checkmark}>
-            <ThemedText style={styles.checkmarkText}>✓</ThemedText>
-          </View>
-        )}
-      </View>
-
-      <ThemedText
-        style={[styles.buddyName, { color: isDark ? "#FFFFFF" : "#1C1C1E" }]}
-      >
-        {buddy.name}
-      </ThemedText>
-
-      <ThemedText
-        style={[
-          styles.buddyDescription,
-          { color: isDark ? "#8E8E93" : "#666666" },
-        ]}
-      >
-        {buddy.personality?.description}
-      </ThemedText>
-
-      {buddy.personality?.mbti_type && (
-        <View style={styles.mbtiContainer}>
-          <ThemedText style={styles.mbtiText}>
-            {buddy.personality.mbti_type}
-          </ThemedText>
-        </View>
-      )}
-    </Pressable>
-  );
-}
-
 export default function AIBuddySelectionScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const [selectedBuddy, setSelectedBuddy] = useState<AIBuddy | null>(null);
+  const { user } = useUser();
 
   const { data: buddies, isLoading, error } = useAIBuddies();
+  const selectBuddyMutation = useSelectBuddy();
 
   const handleGoBack = () => {
     router.back();
@@ -88,17 +35,44 @@ export default function AIBuddySelectionScreen() {
     setSelectedBuddy(buddy);
   };
 
-  const handleConfirmSelection = () => {
-    if (selectedBuddy) {
-      // TODO: Save selected buddy to user preferences/context
-      console.log("Selected buddy:", selectedBuddy);
-      // Navigate to chat with selected buddy
-      router.push("/new-chat");
+  const handleConfirmSelection = async () => {
+    if (selectedBuddy && user?.id) {
+      try {
+        // Validate buddy ID is not empty
+        if (!selectedBuddy.id) {
+          throw new Error("Buddy ID is missing");
+        }
+
+        // Use TanStack Query mutation to select the buddy
+        await selectBuddyMutation.mutateAsync(selectedBuddy.id);
+
+        console.log("Selected buddy saved to backend:", selectedBuddy.name);
+
+        // Navigate back to home screen
+        router.push("/");
+      } catch (error) {
+        console.error("Error saving selected buddy:", error);
+
+        // More detailed error message
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error";
+        Alert.alert(
+          "Selection Failed",
+          `Failed to save your AI buddy selection: ${errorMessage}\n\nPlease try again or contact support if the issue persists.`,
+          [{ text: "OK" }]
+        );
+      }
+    } else if (!user?.id) {
+      Alert.alert(
+        "Authentication Required",
+        "Please sign in to select an AI buddy.",
+        [{ text: "OK" }]
+      );
     }
   };
 
   const renderBuddyCard = ({ item }: { item: AIBuddy }) => (
-    <BuddyCard
+    <AIBuddyCard
       buddy={item}
       onPress={handleSelectBuddy}
       isSelected={selectedBuddy?.id === item.id}
@@ -163,7 +137,7 @@ export default function AIBuddySelectionScreen() {
                 { color: isDark ? "#FF6B6B" : "#DC2626" },
               ]}
             >
-              Using demo buddies (API connection failed)
+              Failed to load AI buddies. Please check your connection.
             </ThemedText>
           </View>
         ) : null}
@@ -181,12 +155,20 @@ export default function AIBuddySelectionScreen() {
       {selectedBuddy && (
         <View style={styles.confirmContainer}>
           <Pressable
-            style={styles.confirmButton}
+            style={[
+              styles.confirmButton,
+              { opacity: selectBuddyMutation.isPending ? 0.7 : 1 },
+            ]}
             onPress={handleConfirmSelection}
+            disabled={selectBuddyMutation.isPending}
           >
-            <ThemedText style={styles.confirmButtonText}>
-              Start chatting with {selectedBuddy.name}
-            </ThemedText>
+            {selectBuddyMutation.isPending ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <ThemedText style={styles.confirmButtonText}>
+                Start chatting with {selectedBuddy.name}
+              </ThemedText>
+            )}
           </Pressable>
         </View>
       )}
@@ -248,65 +230,6 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     paddingBottom: 100,
-  },
-  buddyCard: {
-    marginHorizontal: 20,
-    marginBottom: 16,
-    padding: 16,
-    borderRadius: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  selectedCard: {
-    borderWidth: 2,
-    borderColor: "#667EEA",
-  },
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  emoji: {
-    fontSize: 32,
-  },
-  checkmark: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: "#10B981",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  checkmarkText: {
-    color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "bold",
-  },
-  buddyName: {
-    fontSize: 20,
-    fontWeight: "700",
-    marginBottom: 8,
-  },
-  buddyDescription: {
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 12,
-  },
-  mbtiContainer: {
-    alignSelf: "flex-start",
-    backgroundColor: "#EEF2FF",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  mbtiText: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#667EEA",
   },
   confirmContainer: {
     position: "absolute",

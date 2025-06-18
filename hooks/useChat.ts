@@ -25,10 +25,12 @@ export function useSendChatMessage() {
       message,
       conversationContext,
       isVoice = false,
+      buddyId,
     }: {
       message: string;
       conversationContext: ChatMessage[];
       isVoice?: boolean;
+      buddyId?: string;
     }): Promise<ChatResponse> => {
       if (!message.trim()) {
         throw new Error("Message cannot be empty");
@@ -46,6 +48,7 @@ export function useSendChatMessage() {
         is_voice: isVoice,
         user_id: user?.id,
         conversation_context: contextForAPI,
+        buddy_id: buddyId as "oliver" | "luna" | "zara" | undefined, // Type-safe buddy_id
       };
 
       return ApiService.sendChatMessage(chatRequest);
@@ -88,13 +91,15 @@ export function useChatMutation() {
   const sendMessage = async (
     message: string,
     conversationContext: ChatMessage[],
-    isVoice: boolean = false
+    isVoice: boolean = false,
+    buddyId?: string
   ): Promise<string> => {
     try {
       const result = await sendChatMessage.mutateAsync({
         message,
         conversationContext,
         isVoice,
+        buddyId,
       });
 
       if (!result.success || !result.response) {
