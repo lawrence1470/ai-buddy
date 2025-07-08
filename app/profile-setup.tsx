@@ -1,4 +1,6 @@
 import { ThemedText } from "@/components/ThemedText";
+import { Text, H3 } from "@/components/typography";
+import { Typography } from "@/constants/Typography";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useUpsertUserProfile, useUserProfile } from "@/hooks/useUserProfile";
 import { useUser } from "@clerk/clerk-expo";
@@ -45,9 +47,7 @@ export default function ProfileSetupScreen() {
 
   // Get the current name for placeholder
   const currentName = existingProfile?.name || user?.firstName || "";
-  const placeholderText = currentName
-    ? `Currently: ${currentName}`
-    : "Enter your name";
+  const placeholderText = "Your name";
 
   console.log("Current firstName state:", firstName);
   console.log("Current placeholderText:", placeholderText);
@@ -109,11 +109,13 @@ export default function ProfileSetupScreen() {
               ← Back
             </ThemedText>
           </Pressable>
-          <ThemedText
-            style={[styles.title, { color: isDark ? "#FFFFFF" : "#1C1C1E" }]}
+          <Text
+            variant="h5"
+            lightColor="#1C1C1E"
+            darkColor="#FFFFFF"
           >
             Complete Your Profile
-          </ThemedText>
+          </Text>
           <Pressable onPress={handleSkip}>
             <ThemedText style={styles.skipText}>Skip</ThemedText>
           </Pressable>
@@ -127,11 +129,13 @@ export default function ProfileSetupScreen() {
             </View>
           </View>
 
-          <ThemedText
-            style={[styles.subtitle, { color: isDark ? "#8E8E93" : "#666666" }]}
+          <H3
+            lightColor="#666666"
+            darkColor="#8E8E93"
+            style={{ textAlign: "center", marginBottom: 40 }}
           >
             What should our AI-buddy call you?
-          </ThemedText>
+          </H3>
 
           {/* Form */}
           <View style={styles.form}>
@@ -202,10 +206,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500",
   },
-  title: {
-    fontSize: 18,
-    fontWeight: "bold",
-  },
   skipText: {
     fontSize: 16,
     color: "#667EEA",
@@ -232,13 +232,6 @@ const styles = StyleSheet.create({
     fontSize: 32,
     color: "#FFFFFF",
   },
-  subtitle: {
-    fontSize: 18,
-    textAlign: "center",
-    marginBottom: 40,
-    lineHeight: 24,
-    fontWeight: "500",
-  },
   form: {
     marginBottom: 40,
   },
@@ -249,9 +242,9 @@ const styles = StyleSheet.create({
     height: 50,
     borderRadius: 12,
     paddingHorizontal: 16,
-    fontSize: 16,
     borderWidth: 1,
     textAlign: "center",
+    ...Typography.input,
   },
   saveButton: {
     height: 50,

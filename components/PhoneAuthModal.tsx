@@ -12,6 +12,8 @@ import {
   View,
 } from "react-native";
 import { ThemedText } from "./ThemedText";
+import { Text, H3 } from "./typography";
+import { Typography } from "@/constants/Typography";
 
 interface PhoneAuthModalProps {
   visible: boolean;
@@ -47,34 +49,53 @@ export default function PhoneAuthModal({
       const cleanPhone = phone.replace(/\D/g, "");
       const formattedPhone = phone.startsWith("+") ? phone : `+1${cleanPhone}`;
 
+      console.log("🔍 DEBUG: Phone Authentication Start");
       console.log("Original phone:", phone);
+      console.log("Clean phone:", cleanPhone);
       console.log("Formatted phone:", formattedPhone);
+      console.log("SignIn available:", !!signIn);
+      console.log("SignUp available:", !!signUp);
 
       // First try to sign in
       if (signIn) {
         try {
+          console.log("📞 Attempting sign in with:", formattedPhone);
           const signInAttempt = await signIn.create({
             identifier: formattedPhone,
           });
 
+          console.log("✅ Sign in attempt created:", {
+            status: signInAttempt.status,
+            identifier: signInAttempt.identifier,
+            supportedFirstFactors: signInAttempt.supportedFirstFactors?.length || 0
+          });
+
           // Try to prepare first factor - let Clerk handle the details
           try {
+            console.log("📲 Preparing phone code strategy...");
             await signInAttempt.prepareFirstFactor({
               strategy: "phone_code",
             } as any);
-          } catch (prepareError) {
+            console.log("✅ Phone code preparation successful");
+          } catch (prepareError: any) {
+            console.log("⚠️ Simple preparation failed, trying with phoneNumberId:", prepareError.message);
             // If the simple approach fails, try with phoneNumberId
             const factors = signInAttempt.supportedFirstFactors || [];
+            console.log("Available factors:", factors.map((f: any) => ({ strategy: f.strategy, phoneNumberId: f.phoneNumberId })));
+            
             const phoneCodeFactor = factors.find(
               (factor: any) => factor.strategy === "phone_code"
             );
 
             if (phoneCodeFactor && (phoneCodeFactor as any).phoneNumberId) {
+              console.log("📲 Retrying with phoneNumberId:", (phoneCodeFactor as any).phoneNumberId);
               await signInAttempt.prepareFirstFactor({
                 strategy: "phone_code",
                 phoneNumberId: (phoneCodeFactor as any).phoneNumberId,
               } as any);
+              console.log("✅ Phone code preparation with ID successful");
             } else {
+              console.error("❌ No phone code factor found");
               throw prepareError;
             }
           }
@@ -83,6 +104,7 @@ export default function PhoneAuthModal({
           setIsSignUp(false);
           setStep("code");
           setLoading(false);
+          console.log("🎉 SMS should be sent! Moving to verification step");
           Alert.alert(
             "Code Sent!",
             "Check your phone for the verification code"
@@ -103,29 +125,62 @@ export default function PhoneAuthModal({
 
       // Try to sign up if sign in failed
       if (signUp) {
+        console.log("👤 Account not found, attempting sign up with:", formattedPhone);
         const signUpAttempt = await signUp.create({
           phoneNumber: formattedPhone,
         });
 
+        console.log("✅ Sign up attempt created:", {
+          status: signUpAttempt.status,
+          phoneNumber: signUpAttempt.phoneNumber,
+          verifications: signUpAttempt.verifications
+        });
+
+        console.log("📲 Preparing phone number verification...");
         await signUpAttempt.preparePhoneNumberVerification({
           strategy: "phone_code",
         });
+        console.log("✅ Phone verification preparation successful");
 
         setPendingSignUp(signUpAttempt);
         setIsSignUp(true);
         setStep("code");
         setLoading(false);
+        console.log("🎉 SMS should be sent for new user! Moving to verification step");
         Alert.alert("Code Sent!", "Check your phone for the verification code");
       } else {
         throw new Error("Neither sign in nor sign up available");
       }
     } catch (error: any) {
       setLoading(false);
-      console.error("Phone authentication error:", error);
-      Alert.alert(
-        "Error",
-        error.errors?.[0]?.message || error.message || "Failed to send code"
-      );
+      console.error("❌ Phone authentication error:", error);
+      console.error("Error details:", {
+        message: error.message,
+        errors: error.errors,
+        code: error.code,
+        status: error.status,
+        stack: error.stack
+      });
+      
+      // More helpful error messages
+      let errorMessage = "Failed to send code";
+      if (error.errors?.[0]?.message) {
+        errorMessage = error.errors[0].message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      // Add specific troubleshooting info
+      const troubleshootingMsg = `
+${errorMessage}
+
+Troubleshooting:
+• Check your Clerk dashboard settings
+• Ensure phone authentication is enabled
+• Try a different phone number format
+• Check console logs for details`;
+
+      Alert.alert("SMS Code Not Sent", troubleshootingMsg);
     }
   };
 
@@ -302,14 +357,12 @@ export default function PhoneAuthModal({
           >
             {/* Header */}
             <View style={styles.header}>
-              <ThemedText
-                style={[
-                  styles.title,
-                  { color: isDark ? "#FFFFFF" : "#000000" },
-                ]}
+              <H3
+                lightColor="#000000"
+                darkColor="#FFFFFF"
               >
                 {step === "phone" ? "Sign In" : "Enter Code"}
-              </ThemedText>
+              </H3>
               <Pressable onPress={handleClose} style={styles.closeButton}>
                 <ThemedText style={styles.closeText}>✕</ThemedText>
               </Pressable>
@@ -318,14 +371,14 @@ export default function PhoneAuthModal({
             {step === "phone" ? (
               <>
                 {/* Phone Step */}
-                <ThemedText
-                  style={[
-                    styles.subtitle,
-                    { color: isDark ? "#8E8E93" : "#666666" },
-                  ]}
+                <Text
+                  variant="bodySmall"
+                  lightColor="#666666"
+                  darkColor="#8E8E93"
+                  style={{ textAlign: "center", marginBottom: 24 }}
                 >
                   Enter your phone number to receive a verification code
-                </ThemedText>
+                </Text>
 
                 <TextInput
                   style={[
@@ -336,7 +389,7 @@ export default function PhoneAuthModal({
                       borderColor: isDark ? "#3A3A3C" : "#E5E5EA",
                     },
                   ]}
-                  placeholder="+1 (555) 123-4567"
+                  placeholder="Phone number"
                   placeholderTextColor={isDark ? "#8E8E93" : "#8E8E93"}
                   value={phone}
                   onChangeText={setPhone}
@@ -366,14 +419,14 @@ export default function PhoneAuthModal({
             ) : (
               <>
                 {/* Code Step */}
-                <ThemedText
-                  style={[
-                    styles.subtitle,
-                    { color: isDark ? "#8E8E93" : "#666666" },
-                  ]}
+                <Text
+                  variant="bodySmall"
+                  lightColor="#666666"
+                  darkColor="#8E8E93"
+                  style={{ textAlign: "center", marginBottom: 24 }}
                 >
                   Enter the 6-digit code sent to {phone}
-                </ThemedText>
+                </Text>
 
                 <TextInput
                   style={[
@@ -480,10 +533,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 20,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-  },
   closeButton: {
     width: 32,
     height: 32,
@@ -496,25 +545,19 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: "#666666",
   },
-  subtitle: {
-    fontSize: 16,
-    marginBottom: 24,
-    textAlign: "center",
-    lineHeight: 22,
-  },
   input: {
     height: 50,
     borderRadius: 12,
     paddingHorizontal: 16,
-    fontSize: 16,
     marginBottom: 20,
     borderWidth: 1,
+    ...Typography.input,
   },
   codeInput: {
     textAlign: "center",
     fontSize: 24,
     fontWeight: "600",
-    letterSpacing: 8,
+    letterSpacing: 4, // Reduced from 8 to 4 for better readability
   },
   button: {
     height: 50,
