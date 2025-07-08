@@ -377,12 +377,11 @@ const styles = StyleSheet.create({
     width: "20%",
     height: "20%",
     borderRadius: 1000,
-    backgroundColor: "rgba(255, 255, 255, 0.4)",
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
   },
   speakingWave: {
     position: "absolute",
     borderWidth: 2,
-    borderColor: "#667EEA",
   },
   speakingIndicator: {
     position: "absolute",

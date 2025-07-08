@@ -1,6 +1,7 @@
 import PhoneAuthModal from "@/components/PhoneAuthModal";
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
+import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useAuth } from "@clerk/clerk-expo";
 import { router } from "expo-router";
@@ -69,11 +70,12 @@ export default function SettingsScreen() {
       <SafeAreaView
         style={[
           styles.container,
-          { backgroundColor: isDark ? "#000000" : "#F8F6F0" },
+          { backgroundColor: Colors[colorScheme ?? "light"].background },
         ]}
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          style={{ backgroundColor: Colors[colorScheme ?? "light"].background }}
+          contentContainerStyle={[styles.scrollContent, { backgroundColor: Colors[colorScheme ?? "light"].background }]}
           showsVerticalScrollIndicator={false}
         >
           {/* Header */}

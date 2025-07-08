@@ -3,6 +3,8 @@ import ChatInput from "@/components/ChatInput";
 import Orb from "@/components/Orb";
 import SessionEndModal from "@/components/SessionEndModal";
 import { ThemedText } from "@/components/ThemedText";
+import { Colors } from "@/constants/Colors";
+import { useColorScheme } from "@/hooks/useColorScheme";
 import { useAISpeaking } from "@/hooks/useAISpeaking";
 import { useSelectedBuddy } from "@/hooks/useSelectedBuddy";
 import { ChatMessage } from "@/services/chatService";
@@ -27,6 +29,7 @@ export default function NewChatScreen() {
   const [sessionStartTime] = useState<Date>(new Date());
   const isSpeaking = useAISpeaking();
   const chatRef = useRef<ChatRef>(null);
+  const colorScheme = useColorScheme();
 
   // Get user's selected buddy from backend
   const { data: selectedBuddy } = useSelectedBuddy();
@@ -126,18 +129,29 @@ export default function NewChatScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-      <KeyboardAvoidingView
-        style={styles.keyboardContainer}
+    <SafeAreaView 
+      style={[
+        styles.container,
+        { backgroundColor: Colors[colorScheme ?? "light"].background }
+      ]} 
+      edges={["top", "bottom"]}
+    >
+        <KeyboardAvoidingView
+        style={[styles.keyboardContainer, { backgroundColor: Colors[colorScheme ?? "light"].background }]}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >
         {/* Header */}
-        <View style={styles.header}>
-          <Pressable onPress={handleClosePress} style={styles.closeButton}>
-            <ThemedText style={styles.closeIcon}>✕</ThemedText>
+        <View style={[styles.header, { 
+          borderBottomColor: Colors[colorScheme ?? "light"].border,
+          backgroundColor: Colors[colorScheme ?? "light"].background
+        }]}>
+          <Pressable onPress={handleClosePress} style={[styles.closeButton, {
+            backgroundColor: colorScheme === "dark" ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)"
+          }]}>
+            <ThemedText style={[styles.closeIcon, { color: Colors[colorScheme ?? "light"].text }]}>✕</ThemedText>
           </Pressable>
-          <ThemedText style={styles.headerTitle}>New Chat</ThemedText>
+          <ThemedText style={[styles.headerTitle, { color: Colors[colorScheme ?? "light"].text }]}>New Chat</ThemedText>
           <View style={styles.headerRight} />
         </View>
 
@@ -146,12 +160,9 @@ export default function NewChatScreen() {
           <View style={styles.aiBuddySection}>
             <View style={styles.orbContainer}>
               {(() => {
-                // Use the correct field name from backend: color_schema instead of avatar.color_scheme
-                const colorSchema = (selectedBuddy as any)?.color_schema;
-                const orbColor = colorSchema?.primary || "#667EEA";
-                const orbColors = colorSchema
-                  ? [colorSchema.primary, colorSchema.secondary]
-                  : undefined;
+                // Use soft gradient colors for orbs
+                const orbColor = Colors[colorScheme ?? "light"].gradientPink;
+                const orbColors = [Colors[colorScheme ?? "light"].gradientPink, Colors[colorScheme ?? "light"].accentDim];
 
                 return (
                   <Orb
@@ -185,7 +196,10 @@ export default function NewChatScreen() {
         </View>
 
         {/* Input Section */}
-        <View style={styles.inputSection}>
+        <View style={[styles.inputSection, {
+          backgroundColor: Colors[colorScheme ?? "light"].background,
+          borderTopColor: Colors[colorScheme ?? "light"].border
+        }]}>
           {/* Text Input */}
           <ChatInput
             onSendMessage={handleSendMessage}
@@ -213,7 +227,6 @@ export default function NewChatScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F6F0",
   },
   keyboardContainer: {
     flex: 1,
@@ -225,26 +238,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(0, 0, 0, 0.1)",
-    backgroundColor: "#F8F6F0",
   },
   closeButton: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: "rgba(0, 0, 0, 0.05)",
     justifyContent: "center",
     alignItems: "center",
   },
   closeIcon: {
     fontSize: 16,
-    color: "#1C1C1E",
     fontWeight: "500",
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#1C1C1E",
   },
   headerRight: {
     width: 32,
@@ -269,17 +277,14 @@ const styles = StyleSheet.create({
   aiBuddyText: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#667EEA",
     textAlign: "center",
     letterSpacing: 1,
     lineHeight: 30,
   },
   inputSection: {
-    backgroundColor: "#F8F6F0",
     paddingHorizontal: 20,
     paddingBottom: 20,
     paddingTop: 15,
     borderTopWidth: 1,
-    borderTopColor: "rgba(0, 0, 0, 0.1)",
   },
 });

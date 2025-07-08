@@ -1,5 +1,6 @@
 import AIBuddyCard from "@/components/AIBuddyCard";
 import { ThemedText } from "@/components/ThemedText";
+import { Colors } from "@/constants/Colors";
 import { useAIBuddies } from "@/hooks/useAIBuddies";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useSelectBuddy } from "@/hooks/useSelectBuddy";
@@ -83,7 +84,7 @@ export default function AIBuddySelectionScreen() {
     <SafeAreaView
       style={[
         styles.container,
-        { backgroundColor: isDark ? "#000000" : "#F8F6F0" },
+        { backgroundColor: Colors[colorScheme ?? "light"].background },
       ]}
     >
       {/* Header */}

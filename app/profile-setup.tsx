@@ -1,5 +1,6 @@
 import { ThemedText } from "@/components/ThemedText";
 import { Text, H3 } from "@/components/typography";
+import { Colors } from "@/constants/Colors";
 import { Typography } from "@/constants/Typography";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useUpsertUserProfile, useUserProfile } from "@/hooks/useUserProfile";
@@ -90,7 +91,7 @@ export default function ProfileSetupScreen() {
     <SafeAreaView
       style={[
         styles.container,
-        { backgroundColor: isDark ? "#000000" : "#F8F6F0" },
+        { backgroundColor: Colors[colorScheme ?? "light"].background }
       ]}
     >
       <KeyboardAvoidingView
@@ -103,7 +104,7 @@ export default function ProfileSetupScreen() {
             <ThemedText
               style={[
                 styles.backText,
-                { color: isDark ? "#FFFFFF" : "#1C1C1E" },
+                { color: Colors[colorScheme ?? "light"].text },
               ]}
             >
               ← Back
@@ -111,13 +112,12 @@ export default function ProfileSetupScreen() {
           </Pressable>
           <Text
             variant="h5"
-            lightColor="#1C1C1E"
-            darkColor="#FFFFFF"
+            style={{ color: Colors[colorScheme ?? "light"].text }}
           >
             Complete Your Profile
           </Text>
           <Pressable onPress={handleSkip}>
-            <ThemedText style={styles.skipText}>Skip</ThemedText>
+            <ThemedText style={[styles.skipText, { color: Colors.light.gradientStart }]}>Skip</ThemedText>
           </Pressable>
         </View>
 
@@ -130,9 +130,11 @@ export default function ProfileSetupScreen() {
           </View>
 
           <H3
-            lightColor="#666666"
-            darkColor="#8E8E93"
-            style={{ textAlign: "center", marginBottom: 40 }}
+            style={{ 
+              color: Colors[colorScheme ?? "light"].textSecondary,
+              textAlign: "center", 
+              marginBottom: 40 
+            }}
           >
             What should our AI-buddy call you?
           </H3>
@@ -144,13 +146,14 @@ export default function ProfileSetupScreen() {
                 style={[
                   styles.input,
                   {
-                    backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
-                    color: isDark ? "#FFFFFF" : "#1C1C1E",
-                    borderColor: isDark ? "#3A3A3C" : "#E5E5EA",
+                    backgroundColor: Colors[colorScheme ?? "light"].cardBackground,
+                    color: Colors[colorScheme ?? "light"].text,
+                    borderColor: Colors[colorScheme ?? "light"].border,
+                    textAlign: firstName ? "center" : "left",
                   },
                 ]}
                 placeholder={firstName ? "" : placeholderText}
-                placeholderTextColor={isDark ? "#8E8E93" : "#8E8E93"}
+                placeholderTextColor={isDark ? Colors.dark.textTertiary : Colors.light.textTertiary}
                 value={firstName}
                 onChangeText={setFirstName}
                 autoComplete="given-name"
@@ -168,7 +171,7 @@ export default function ProfileSetupScreen() {
           <Pressable
             style={[
               styles.saveButton,
-              { backgroundColor: "#667EEA" },
+              { backgroundColor: Colors.light.gradientStart },
               isLoading && styles.buttonDisabled,
             ]}
             onPress={handleSave}
@@ -208,7 +211,6 @@ const styles = StyleSheet.create({
   },
   skipText: {
     fontSize: 16,
-    color: "#667EEA",
     fontWeight: "500",
   },
   content: {
@@ -224,7 +226,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: "#667EEA",
+    backgroundColor: Colors.light.gradientPink,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -243,8 +245,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 16,
     borderWidth: 1,
-    textAlign: "center",
     ...Typography.input,
+    letterSpacing: 0,
   },
   saveButton: {
     height: 50,

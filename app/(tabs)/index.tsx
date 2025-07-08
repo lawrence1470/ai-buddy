@@ -1,3 +1,4 @@
+import Loading from "@/components/Loading";
 import Orb from "@/components/Orb";
 import PhoneAuthModal from "@/components/PhoneAuthModal";
 import ProfileCompletionCard from "@/components/ProfileCompletionCard";
@@ -5,15 +6,18 @@ import RecentSessions from "@/components/RecentSessions";
 import { ThemedText } from "@/components/ThemedText";
 import { Text, H2 } from "@/components/typography";
 import VoiceSearchCard from "@/components/VoiceSearchCard";
+import { Colors } from "@/constants/Colors";
 import { useAISpeaking } from "@/hooks/useAISpeaking";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useSelectedBuddy } from "@/hooks/useSelectedBuddy";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useAuth, useUser } from "@clerk/clerk-expo";
+import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   Alert,
+  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -27,6 +31,16 @@ export default function HomeScreen() {
   const { isSignedIn, signOut } = useAuth();
   const { user } = useUser();
   const [showAuthModal, setShowAuthModal] = useState(false);
+  
+  // Debug: Log the actual background color being used
+  useEffect(() => {
+    console.log("=== Background Color Debug ===");
+    console.log("Color scheme:", colorScheme);
+    console.log("Background color:", Colors[colorScheme ?? "light"].background);
+    console.log("Is this white?", Colors[colorScheme ?? "light"].background === "#FFFFFF");
+    console.log("All light colors:", Colors.light);
+    console.log("=============================");
+  }, [colorScheme]);
 
   // Get user profile from Supabase
   const { data: userProfile } = useUserProfile();
@@ -69,7 +83,7 @@ export default function HomeScreen() {
     console.log("==============================");
   }, [selectedBuddy, isLoadingBuddy, buddyError]);
 
-  const isDark = colorScheme === "dark";
+  const isDark = colorScheme ?? "light" === "dark";
 
   // Check if user can start chatting (signed in AND has selected a buddy)
   const canStartChat =
@@ -182,15 +196,21 @@ export default function HomeScreen() {
     return "Make your day easy with AI";
   };
 
+  // Show loading screen while fetching buddy data
+  if (isLoadingBuddy && !selectedBuddy) {
+    return <Loading message="Loading your AI buddy..." />;
+  }
+
   return (
-    <SafeAreaView
+    <SafeAreaView 
       style={[
         styles.container,
-        { backgroundColor: isDark ? "#000000" : "#F8F6F0" },
+        { backgroundColor: Colors[colorScheme ?? "light"].background }
       ]}
     >
-      <ScrollView
-        style={styles.scrollView}
+        <ScrollView
+        style={[styles.scrollView, { backgroundColor: Colors[colorScheme ?? "light"].background }]}
+        contentContainerStyle={{ backgroundColor: Colors[colorScheme ?? "light"].background }}
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
@@ -199,17 +219,13 @@ export default function HomeScreen() {
             <View style={styles.headerTextContainer}>
               <View style={styles.avatarContainer}>
                 {(() => {
-                  // Use the correct field name from backend: color_schema instead of avatar.color_scheme
-                  const colorSchema = (selectedBuddy as any)?.color_schema;
-                  const orbColor = colorSchema?.primary || "#667EEA";
-                  const orbColors = colorSchema
-                    ? [colorSchema.primary, colorSchema.secondary]
-                    : undefined;
+                  // Use soft gradient colors for orbs
+                  const orbColor = Colors[colorScheme ?? "light"].gradientPink;
+                  const orbColors = [Colors[colorScheme ?? "light"].gradientStart, Colors[colorScheme ?? "light"].gradientEnd];
 
                   console.log("🎨 Orb Render Debug:", {
                     buddyName: selectedBuddy?.name,
                     buddyId: selectedBuddy?.id,
-                    colorSchema,
                     orbColor,
                     orbColors,
                     selectedBuddy: !!selectedBuddy,
@@ -227,16 +243,12 @@ export default function HomeScreen() {
                 })()}
               </View>
               <View style={styles.headerText}>
-                <H2
-                  lightColor="#1C1C1E"
-                  darkColor="#FFFFFF"
-                >
+                <H2 style={{ color: Colors[colorScheme ?? "light"].text }}>
                   {getGreeting()}
                 </H2>
                 <Text
                   variant="bodySmall"
-                  lightColor="#8E8E93"
-                  darkColor="#8E8E93"
+                  style={{ color: Colors[colorScheme ?? "light"].textSecondary }}
                 >
                   {getSubtitle()}
                 </Text>
@@ -255,25 +267,26 @@ export default function HomeScreen() {
               styles.card,
               styles.newChatCard,
               !canStartChat && styles.cardDisabled,
+              { backgroundColor: Colors[colorScheme ?? "light"].cardBackground }
             ]}
             onPress={handleNewChat}
           >
             <View style={styles.cardContent}>
               <ThemedText style={styles.cardIcon}>✏️</ThemedText>
-              <View style={styles.newBadge}>
-                <ThemedText style={styles.newBadgeText}>New</ThemedText>
+              <View style={[styles.newBadge, { backgroundColor: Colors[colorScheme ?? "light"].accent }]}>
+                <ThemedText style={[styles.newBadgeText, { color: "#FFFFFF" }]}>New</ThemedText>
               </View>
             </View>
-            <ThemedText style={[styles.cardTitle, { color: "#1C1C1E" }]}>
+            <ThemedText style={[styles.cardTitle, { color: Colors[colorScheme ?? "light"].text }]}>
               New chat
             </ThemedText>
             {!isSignedIn && (
-              <ThemedText style={styles.cardDisabledText}>
+              <ThemedText style={[styles.cardDisabledText, { color: Colors[colorScheme ?? "light"].textTertiary }]}>
                 Sign in required
               </ThemedText>
             )}
             {needsBuddySelection && (
-              <ThemedText style={styles.cardDisabledText}>
+              <ThemedText style={[styles.cardDisabledText, { color: Colors[colorScheme ?? "light"].textTertiary }]}>
                 Choose an AI buddy first
               </ThemedText>
             )}
@@ -287,8 +300,14 @@ export default function HomeScreen() {
             ]}
             onPress={handleTalkWithAI}
           >
-            <ThemedText style={styles.cardTitle}>Talk with AI Buddy</ThemedText>
-            <ThemedText style={styles.cardSubtitle}>
+            <LinearGradient
+              colors={isDark ? [Colors.dark.tint, Colors.dark.accentSubtle] : [Colors.light.tint, Colors.light.accentSubtle]}
+              style={StyleSheet.absoluteFill}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            />
+            <ThemedText style={[styles.cardTitle, { color: "#FFFFFF" }]}>Talk with AI Buddy</ThemedText>
+            <ThemedText style={[styles.cardSubtitle, { color: "rgba(255, 255, 255, 0.8)" }]}>
               {!isSignedIn
                 ? "Sign in to start talking"
                 : needsBuddySelection
@@ -323,11 +342,11 @@ export default function HomeScreen() {
         )}
       </ScrollView>
 
-      {/* Auth Modal */}
-      <PhoneAuthModal
-        visible={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
-      />
+        {/* Auth Modal */}
+        <PhoneAuthModal
+          visible={showAuthModal}
+          onClose={() => setShowAuthModal(false)}
+        />
     </SafeAreaView>
   );
 }
@@ -343,6 +362,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 30,
+    backgroundColor: Colors.light.background,
   },
   headerContent: {
     flexDirection: "row",
@@ -375,21 +395,16 @@ const styles = StyleSheet.create({
     minWidth: 80,
     alignItems: "center",
   },
-  signInButton: {
-    backgroundColor: "#667EEA",
-  },
+  signInButton: {},
   signOutButton: {
     backgroundColor: "transparent",
     borderWidth: 1,
-    borderColor: "#8E8E93",
   },
   signInButtonText: {
-    color: "#FFFFFF",
     fontSize: 14,
     fontWeight: "600",
   },
   signOutButtonText: {
-    color: "#8E8E93",
     fontSize: 14,
     fontWeight: "600",
   },
@@ -401,33 +416,32 @@ const styles = StyleSheet.create({
   },
   card: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
     borderRadius: 16,
     padding: 16,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
   cardDisabled: {
     opacity: 0.6,
   },
   cardDisabledText: {
     fontSize: 12,
-    color: "#666666",
     marginTop: 4,
     fontStyle: "italic",
     fontWeight: "500",
   },
-  newChatCard: {
-    backgroundColor: "#F8F6F0",
-  },
+  newChatCard: {},
   talkCard: {
-    backgroundColor: "#667EEA",
+    overflow: "hidden",
   },
   cardContent: {
     flexDirection: "row",
@@ -440,24 +454,20 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   newBadge: {
-    backgroundColor: "#667EEA",
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 12,
   },
   newBadgeText: {
-    color: "#FFFFFF",
     fontSize: 10,
     fontWeight: "bold",
   },
   cardTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#FFFFFF",
   },
   cardSubtitle: {
     fontSize: 14,
-    color: "rgba(255, 255, 255, 0.8)",
     marginTop: 4,
   },
 });

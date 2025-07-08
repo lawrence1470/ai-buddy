@@ -4,7 +4,7 @@ This document describes the integration with the backend API for fetching and ma
 
 ## Overview
 
-The app now fetches recent conversation sessions from your backend API running on `localhost:8080`. This allows users to see their conversation history and continue previous chats.
+The app now fetches recent conversation sessions from your backend API running on `https://ai-buddy-backend.onrender.com`. This allows users to see their conversation history and continue previous chats.
 
 ## Backend API Requirements
 
@@ -48,10 +48,10 @@ Add to your `.env` file:
 
 ```env
 # Optional: Override the default API base URL
-EXPO_PUBLIC_API_BASE_URL=http://localhost:8080
+EXPO_PUBLIC_API_BASE_URL=https://ai-buddy-backend.onrender.com
 ```
 
-If not provided, defaults to `http://localhost:8080`.
+If not provided, defaults to `https://ai-buddy-backend.onrender.com`.
 
 ### API Configuration
 
@@ -59,7 +59,9 @@ The API configuration is centralized in `constants/api.ts`:
 
 ```typescript
 export const API_CONFIG = {
-  BASE_URL: process.env.EXPO_PUBLIC_API_BASE_URL || "http://localhost:8080",
+  BASE_URL:
+    process.env.EXPO_PUBLIC_API_BASE_URL ||
+    "https://ai-buddy-backend.onrender.com",
   TIMEOUT: 10000,
   DEFAULT_HEADERS: {
     "Content-Type": "application/json",
@@ -136,7 +138,7 @@ The integration includes robust error handling:
 
 You can test the backend connection by:
 
-1. Ensure your backend is running on `localhost:8080`
+1. Ensure your backend is running on `https://ai-buddy-backend.onrender.com`
 2. Check the console logs for session fetch attempts
 3. The app will show mock data if the backend is unavailable
 
@@ -144,7 +146,7 @@ You can test the backend connection by:
 
 ```bash
 # Test the endpoint directly
-curl 'http://localhost:8080/sessions/user/{user_id}'
+curl 'https://ai-buddy-backend.onrender.com/sessions/user/{user_id}'
 ```
 
 ### Mock Data Fallback

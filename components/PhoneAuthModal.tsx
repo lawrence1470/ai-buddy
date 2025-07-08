@@ -352,7 +352,7 @@ Troubleshooting:
           <View
             style={[
               styles.modal,
-              { backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF" },
+              { backgroundColor: isDark ? "#000000" : "#FFFFFF" },
             ]}
           >
             {/* Header */}
@@ -373,8 +373,8 @@ Troubleshooting:
                 {/* Phone Step */}
                 <Text
                   variant="bodySmall"
-                  lightColor="#666666"
-                  darkColor="#8E8E93"
+                  lightColor="#00000080"
+                  darkColor="#FFFFFF80"
                   style={{ textAlign: "center", marginBottom: 24 }}
                 >
                   Enter your phone number to receive a verification code
@@ -384,13 +384,13 @@ Troubleshooting:
                   style={[
                     styles.input,
                     {
-                      backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
+                      backgroundColor: isDark ? "#0A0A0A" : "#FAFAFA",
                       color: isDark ? "#FFFFFF" : "#000000",
-                      borderColor: isDark ? "#3A3A3C" : "#E5E5EA",
+                      borderColor: isDark ? "#FFFFFF10" : "#00000010",
                     },
                   ]}
                   placeholder="Phone number"
-                  placeholderTextColor={isDark ? "#8E8E93" : "#8E8E93"}
+                  placeholderTextColor={isDark ? "#FFFFFF50" : "#00000050"}
                   value={phone}
                   onChangeText={setPhone}
                   keyboardType="phone-pad"
@@ -405,7 +405,7 @@ Troubleshooting:
                 <Pressable
                   style={[
                     styles.button,
-                    { backgroundColor: "#667EEA" },
+                    { backgroundColor: "#00D9FF" },
                     loading && styles.buttonDisabled,
                   ]}
                   onPress={handleSendCode}
@@ -421,8 +421,8 @@ Troubleshooting:
                 {/* Code Step */}
                 <Text
                   variant="bodySmall"
-                  lightColor="#666666"
-                  darkColor="#8E8E93"
+                  lightColor="#00000080"
+                  darkColor="#FFFFFF80"
                   style={{ textAlign: "center", marginBottom: 24 }}
                 >
                   Enter the 6-digit code sent to {phone}
@@ -433,13 +433,13 @@ Troubleshooting:
                     styles.input,
                     styles.codeInput,
                     {
-                      backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7",
+                      backgroundColor: isDark ? "#0A0A0A" : "#FAFAFA",
                       color: isDark ? "#FFFFFF" : "#000000",
-                      borderColor: isDark ? "#3A3A3C" : "#E5E5EA",
+                      borderColor: isDark ? "#FFFFFF10" : "#00000010",
                     },
                   ]}
                   placeholder="123456"
-                  placeholderTextColor={isDark ? "#8E8E93" : "#8E8E93"}
+                  placeholderTextColor={isDark ? "#FFFFFF50" : "#00000050"}
                   value={code}
                   onChangeText={setCode}
                   keyboardType="number-pad"
@@ -455,7 +455,7 @@ Troubleshooting:
                 <Pressable
                   style={[
                     styles.button,
-                    { backgroundColor: "#667EEA" },
+                    { backgroundColor: "#00D9FF" },
                     loading && styles.buttonDisabled,
                   ]}
                   onPress={handleVerifyCode}
@@ -473,7 +473,7 @@ Troubleshooting:
                   <ThemedText
                     style={[
                       styles.backText,
-                      { color: isDark ? "#8E8E93" : "#666666" },
+                      { color: isDark ? "#FFFFFF80" : "#00000080" },
                     ]}
                   >
                     ← Back to phone number
@@ -486,7 +486,7 @@ Troubleshooting:
             <ThemedText
               style={[
                 styles.infoText,
-                { color: isDark ? "#8E8E93" : "#8E8E93" },
+                { color: isDark ? "#FFFFFF50" : "#00000050" },
               ]}
             >
               {isSignUp
@@ -516,7 +516,7 @@ const styles = StyleSheet.create({
   modal: {
     width: "90%",
     maxWidth: 400,
-    borderRadius: 20,
+    borderRadius: 0,
     padding: 24,
     shadowColor: "#000",
     shadowOffset: {
@@ -536,22 +536,23 @@ const styles = StyleSheet.create({
   closeButton: {
     width: 32,
     height: 32,
-    borderRadius: 16,
-    backgroundColor: "rgba(0, 0, 0, 0.1)",
+    borderRadius: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.05)",
     justifyContent: "center",
     alignItems: "center",
   },
   closeText: {
     fontSize: 18,
-    color: "#666666",
+    color: "#00000080",
   },
   input: {
     height: 50,
-    borderRadius: 12,
+    borderRadius: 0,
     paddingHorizontal: 16,
     marginBottom: 20,
     borderWidth: 1,
     ...Typography.input,
+    letterSpacing: 0,
   },
   codeInput: {
     textAlign: "center",
@@ -561,7 +562,7 @@ const styles = StyleSheet.create({
   },
   button: {
     height: 50,
-    borderRadius: 12,
+    borderRadius: 0,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 16,

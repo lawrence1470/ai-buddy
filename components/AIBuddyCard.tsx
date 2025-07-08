@@ -1,7 +1,6 @@
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { AIBuddy } from "@/services/aiBuddyService";
 import { TTSService } from "@/services/ttsService";
-import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useRef, useState } from "react";
 import {
@@ -14,6 +13,7 @@ import {
 import Orb from "./Orb";
 import { Text, H5 } from "./typography";
 import { Ionicons } from "@expo/vector-icons";
+import { Colors } from "@/constants/Colors";
 
 interface AIBuddyCardProps {
   buddy: AIBuddy;
@@ -104,12 +104,8 @@ export default function AIBuddyCard({
     }
   };
 
-  const getGradientColors = (): [string, string, string] => {
-    const colorSchema = (buddy as any).color_schema;
-    if (colorSchema?.primary && colorSchema?.secondary) {
-      return [colorSchema.primary, colorSchema.secondary, colorSchema.primary + "40"];
-    }
-    return ["#667EEA", "#764BA2", "#667EEA40"];
+  const getGradientColors = (): [string, string] => {
+    return [Colors[colorScheme ?? "light"].gradientStart, Colors[colorScheme ?? "light"].gradientEnd];
   };
 
   const glowOpacity = glowAnim.interpolate({
@@ -148,41 +144,30 @@ export default function AIBuddyCard({
           />
         )}
 
-        {/* Main card container - now more compact */}
+        {/* Main card container - soft gradient style */}
         <View style={[styles.container, isDark && styles.containerDark]}>
-          {/* Glass background */}
-          {Platform.OS === "ios" ? (
-            <BlurView intensity={60} tint={isDark ? "dark" : "light"} style={StyleSheet.absoluteFill}>
-              <View style={[styles.glassOverlay, isDark && styles.glassOverlayDark]} />
-            </BlurView>
-          ) : (
-            <View style={[styles.androidGlass, isDark && styles.androidGlassDark]} />
-          )}
+          {/* Gradient background */}
 
-          {/* Gradient accent line */}
-          <LinearGradient
-            colors={getGradientColors()}
-            style={styles.gradientAccent}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-          />
+          {/* Gradient accent border for selected state */}
+          {isSelected && (
+            <LinearGradient
+              colors={getGradientColors()}
+              style={styles.selectedBorder}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+            />
+          )}
 
           {/* Compact content layout */}
           <View style={styles.content}>
             {/* Left side - Orb */}
             <View style={styles.orbContainer}>
               {(() => {
-                const colorSchema = (buddy as any).color_schema;
-                const orbColor = colorSchema?.primary || "#667EEA";
-                const orbColors = colorSchema
-                  ? [colorSchema.primary, colorSchema.secondary]
-                  : undefined;
-
                 return (
                   <Orb
                     size={56}
-                    colors={orbColors}
-                    color={orbColor}
+                    colors={getGradientColors()}
+                    color={Colors[colorScheme ?? "light"].gradientPink}
                     animated={true}
                     isSpeaking={isPlaying}
                   />
@@ -200,8 +185,8 @@ export default function AIBuddyCard({
             {/* Center - Name and minimal info */}
             <View style={styles.textContent}>
               <H5
-                lightColor="#1C1C1E"
-                darkColor="#FFFFFF"
+                lightColor={Colors.light.text}
+                darkColor={Colors.dark.text}
                 style={styles.name}
                 numberOfLines={1}
               >
@@ -212,8 +197,8 @@ export default function AIBuddyCard({
                 {buddy.personality?.mbti_type && (
                   <Text
                     variant="caption"
-                    lightColor="#666666"
-                    darkColor="#999999"
+                    lightColor={Colors.light.textSecondary}
+                    darkColor={Colors.dark.textSecondary}
                     style={styles.tag}
                   >
                     {buddy.personality.mbti_type}
@@ -222,8 +207,8 @@ export default function AIBuddyCard({
                 {buddy.voice?.accent && (
                   <Text
                     variant="caption"
-                    lightColor="#666666"
-                    darkColor="#999999"
+                    lightColor={Colors.light.textSecondary}
+                    darkColor={Colors.dark.textSecondary}
                     style={styles.tag}
                   >
                     • {buddy.voice.accent}
@@ -238,9 +223,7 @@ export default function AIBuddyCard({
                 styles.playButton,
                 isPlaying && styles.playButtonActive,
                 {
-                  backgroundColor: isDark
-                    ? "rgba(255, 255, 255, 0.1)"
-                    : "rgba(0, 0, 0, 0.05)",
+                  backgroundColor: isDark ? "rgba(255, 183, 210, 0.1)" : "rgba(255, 183, 210, 0.2)",
                 },
               ]}
               onPress={handlePlayVoice}
@@ -249,7 +232,7 @@ export default function AIBuddyCard({
               <Ionicons
                 name={isPlaying ? "volume-high" : "play"}
                 size={18}
-                color={isDark ? "#FFFFFF" : "#1C1C1E"}
+                color={isDark ? Colors.dark.text : Colors.light.text}
               />
             </Pressable>
           </View>
@@ -272,56 +255,41 @@ const styles = StyleSheet.create({
   },
   glowEffect: {
     position: "absolute",
-    top: -15,
-    left: -15,
-    right: -15,
-    bottom: -15,
-    borderRadius: 35,
+    top: -8,
+    left: -8,
+    right: -8,
+    bottom: -8,
+    borderRadius: 28,
     opacity: 0.3,
   },
   container: {
     borderRadius: 20,
     overflow: "hidden",
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.3)",
-    height: 88, // Fixed compact height
+    backgroundColor: Colors.light.cardBackground,
+    height: 88,
     ...Platform.select({
       ios: {
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.08,
-        shadowRadius: 12,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
       },
       android: {
-        elevation: 4,
+        elevation: 2,
       },
     }),
   },
   containerDark: {
-    backgroundColor: "rgba(28, 28, 30, 0.9)",
-    borderColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: Colors.dark.cardBackground,
   },
-  glassOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(255, 255, 255, 0.6)",
-  },
-  glassOverlayDark: {
-    backgroundColor: "rgba(0, 0, 0, 0.2)",
-  },
-  androidGlass: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(255, 255, 255, 0.92)",
-  },
-  androidGlassDark: {
-    backgroundColor: "rgba(28, 28, 30, 0.92)",
-  },
-  gradientAccent: {
+  selectedBorder: {
     position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 3,
+    top: -2,
+    left: -2,
+    right: -2,
+    bottom: -2,
+    borderRadius: 22,
+    borderWidth: 3,
   },
   content: {
     flexDirection: "row",
@@ -340,11 +308,11 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: "#10B981",
+    backgroundColor: Colors.light.tint,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
-    borderColor: "#FFFFFF",
+    borderColor: Colors.light.background,
   },
   textContent: {
     flex: 1,
@@ -367,11 +335,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginLeft: 12,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
   },
   playButtonActive: {
-    backgroundColor: "rgba(16, 185, 129, 0.15) !important",
-    borderColor: "rgba(16, 185, 129, 0.3)",
+    backgroundColor: "rgba(255, 183, 210, 0.3)",
   },
 });

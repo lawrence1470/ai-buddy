@@ -1,3 +1,4 @@
+import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useProfileCompletion } from "@/hooks/useUserProfile";
 import { useUser } from "@clerk/clerk-expo";
@@ -60,7 +61,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   card: {
-    backgroundColor: "#F8F6F0",
+    backgroundColor: Colors.light.cardBackground,
     borderRadius: 16,
     padding: 16,
     shadowColor: "#000",

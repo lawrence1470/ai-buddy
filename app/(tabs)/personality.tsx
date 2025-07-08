@@ -1,6 +1,8 @@
+import Loading from "@/components/Loading";
 import Orb from "@/components/Orb";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
+import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useSessions } from "@/hooks/useSessions";
 import {
@@ -8,7 +10,6 @@ import {
   personalityService,
 } from "@/services/personalityService";
 import { useUser } from "@clerk/clerk-expo";
-import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useState } from "react";
 import {
   Alert,
@@ -78,7 +79,7 @@ export default function PersonalityScreen() {
           <ThemedText style={styles.traitLabel}>
             {personalityService.getTraitLabel(label)}
           </ThemedText>
-          <ThemedText style={styles.traitValue}>{percentage}%</ThemedText>
+          <ThemedText style={[styles.traitValue, { color: Colors[colorScheme ?? "light"].tint }]}>{percentage}%</ThemedText>
         </View>
         <View
           style={[
@@ -91,7 +92,7 @@ export default function PersonalityScreen() {
               styles.traitBarFill,
               {
                 width: barWidth,
-                backgroundColor: "#667EEA",
+                backgroundColor: Colors[colorScheme ?? "light"].gradientStart,
               },
             ]}
           />
@@ -111,7 +112,7 @@ export default function PersonalityScreen() {
         ]}
       >
         <View style={styles.cardHeader}>
-          <ThemedText style={styles.mbtiType}>
+          <ThemedText style={[styles.mbtiType, { color: Colors[colorScheme ?? "light"].tint }]}>
             {personality.mbti_type}
           </ThemedText>
           <ThemedText style={styles.confidenceScore}>
@@ -217,7 +218,7 @@ export default function PersonalityScreen() {
                     styles.progressFill,
                     {
                       width: `${progressPercentage}%`,
-                      backgroundColor: "#667EEA",
+                      backgroundColor: Colors[colorScheme ?? "light"].gradientStart,
                     },
                   ]}
                 />
@@ -243,25 +244,25 @@ export default function PersonalityScreen() {
               What we learn from your conversations:
             </ThemedText>
             <View style={styles.learningItem}>
-              <ThemedText style={styles.bulletPoint}>•</ThemedText>
+              <ThemedText style={[styles.bulletPoint, { color: Colors[colorScheme ?? "light"].tint }]}>•</ThemedText>
               <ThemedText style={styles.learningText}>
                 Communication style and preferences
               </ThemedText>
             </View>
             <View style={styles.learningItem}>
-              <ThemedText style={styles.bulletPoint}>•</ThemedText>
+              <ThemedText style={[styles.bulletPoint, { color: Colors[colorScheme ?? "light"].tint }]}>•</ThemedText>
               <ThemedText style={styles.learningText}>
                 Personality traits (introversion/extraversion, thinking/feeling)
               </ThemedText>
             </View>
             <View style={styles.learningItem}>
-              <ThemedText style={styles.bulletPoint}>•</ThemedText>
+              <ThemedText style={[styles.bulletPoint, { color: Colors[colorScheme ?? "light"].tint }]}>•</ThemedText>
               <ThemedText style={styles.learningText}>
                 Decision-making patterns and interests
               </ThemedText>
             </View>
             <View style={styles.learningItem}>
-              <ThemedText style={styles.bulletPoint}>•</ThemedText>
+              <ThemedText style={[styles.bulletPoint, { color: Colors[colorScheme ?? "light"].tint }]}>•</ThemedText>
               <ThemedText style={styles.learningText}>
                 Emotional expressions and conversation topics
               </ThemedText>
@@ -294,79 +295,75 @@ export default function PersonalityScreen() {
     </ThemedView>
   );
 
+  if (loading && !profile) {
+    return <Loading message="Analyzing your personality..." />;
+  }
+
   return (
     <SafeAreaView
       style={[
         styles.container,
-        { backgroundColor: isDark ? "#000000" : "#F8F6F0" },
+        { backgroundColor: Colors[colorScheme ?? "light"].background },
       ]}
     >
-      <LinearGradient
-        colors={isDark ? ["#000000", "#1a1a1a"] : ["#F8F6F0", "#E8E6E0"]}
-        style={styles.gradient}
+      <ScrollView
+        style={[styles.scrollView, { backgroundColor: Colors[colorScheme ?? "light"].background }]}
+        contentContainerStyle={[styles.scrollContent, { backgroundColor: Colors[colorScheme ?? "light"].background }]}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       >
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-        >
-          {/* Header with Orb */}
-          <View style={styles.header}>
-            <Orb
-              size={120}
-              color="#667EEA"
-              animated={true}
-              isSpeaking={false}
-            />
-            <ThemedText style={styles.headerTitle}>Your Personality</ThemedText>
-            <ThemedText style={styles.headerSubtitle}>
-              AI-powered insights from your conversations
-            </ThemedText>
-          </View>
+        {/* Header with Orb */}
+        <View style={styles.header}>
+          <Orb
+            size={120}
+            color="#667EEA"
+            animated={true}
+            isSpeaking={false}
+          />
+          <ThemedText style={styles.headerTitle}>Your Personality</ThemedText>
+          <ThemedText style={styles.headerSubtitle}>
+            AI-powered insights from your conversations
+          </ThemedText>
+        </View>
 
-          {/* Content */}
-          {loading ? (
-            <ThemedView
-              style={[
-                styles.card,
-                { backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF" },
-              ]}
-            >
-              <ThemedText style={styles.loadingText}>
-                Loading personality insights...
-              </ThemedText>
-            </ThemedView>
-          ) : !isAuthenticated ? (
-            renderLoginRequired()
-          ) : personality ? (
-            <>
-              {renderPersonalityCard()}
-              {renderTraitScores()}
-              {renderConversationInsights()}
-            </>
-          ) : (
-            renderDataCollectionState()
-          )}
-
-          {personality?.last_updated && (
-            <ThemedText style={styles.lastUpdated}>
-              Last updated:{" "}
-              {new Date(personality.last_updated).toLocaleDateString()}
+        {/* Content */}
+        {loading ? (
+          <ThemedView
+            style={[
+              styles.card,
+              { backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF" },
+            ]}
+          >
+            <ThemedText style={styles.loadingText}>
+              Loading personality insights...
             </ThemedText>
-          )}
-        </ScrollView>
-      </LinearGradient>
+          </ThemedView>
+        ) : !isAuthenticated ? (
+          renderLoginRequired()
+        ) : personality ? (
+          <>
+            {renderPersonalityCard()}
+            {renderTraitScores()}
+            {renderConversationInsights()}
+          </>
+        ) : (
+          renderDataCollectionState()
+        )}
+
+        {personality?.last_updated && (
+          <ThemedText style={styles.lastUpdated}>
+            Last updated:{" "}
+            {new Date(personality.last_updated).toLocaleDateString()}
+          </ThemedText>
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-  },
-  gradient: {
     flex: 1,
   },
   scrollView: {
@@ -382,6 +379,7 @@ const styles = StyleSheet.create({
     marginBottom: 32,
     paddingTop: 40,
     paddingHorizontal: 20,
+    backgroundColor: Colors.light.background,
   },
   headerTitle: {
     fontSize: 28,
@@ -428,7 +426,6 @@ const styles = StyleSheet.create({
   mbtiType: {
     fontSize: 32,
     fontWeight: "bold",
-    color: "#667EEA",
     minHeight: 40,
     lineHeight: 38,
   },
@@ -465,7 +462,6 @@ const styles = StyleSheet.create({
   traitValue: {
     fontSize: 14,
     fontWeight: "bold",
-    color: "#667EEA",
   },
   traitBarBackground: {
     height: 8,
@@ -583,7 +579,6 @@ const styles = StyleSheet.create({
   },
   bulletPoint: {
     fontSize: 16,
-    color: "#667EEA",
     marginRight: 8,
     lineHeight: 20,
   },

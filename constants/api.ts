@@ -1,7 +1,9 @@
 // API Configuration
 export const API_CONFIG = {
   // Base URL for the backend API
-  BASE_URL: process.env.EXPO_PUBLIC_API_BASE_URL || "http://localhost:8080",
+  BASE_URL:
+    process.env.EXPO_PUBLIC_API_BASE_URL ||
+    "https://ai-buddy-backend.onrender.com",
 
   // Timeout for API requests (in milliseconds)
   TIMEOUT: 10000,

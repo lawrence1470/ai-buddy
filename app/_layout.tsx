@@ -1,4 +1,4 @@
-import { DarkTheme, ThemeProvider } from "@react-navigation/native";
+import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { useFonts } from "expo-font";
 import {
   Outfit_400Regular,
@@ -29,6 +29,7 @@ import { queryClient } from "@/lib/queryClient";
 import { tokenCache } from "@/lib/tokenCache";
 import { ClerkProvider } from "@clerk/clerk-expo";
 import { QueryClientProvider } from "@tanstack/react-query";
+import { Colors } from "@/constants/Colors";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -41,17 +42,31 @@ if (!publishableKey) {
   );
 }
 
-// Custom theme that matches our glassmorphism design
-const GlassTheme = {
+// Light theme
+const LightTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    primary: Colors.light.tint,
+    background: Colors.light.background,
+    card: Colors.light.surface,
+    text: Colors.light.text,
+    border: Colors.light.border,
+    notification: Colors.light.accent,
+  },
+};
+
+// Dark theme
+const DarkThemeConfig = {
   ...DarkTheme,
   colors: {
     ...DarkTheme.colors,
-    primary: "#667eea",
-    background: "transparent",
-    card: "rgba(255, 255, 255, 0.1)",
-    text: "#ffffff",
-    border: "rgba(255, 255, 255, 0.2)",
-    notification: "#667eea",
+    primary: Colors.dark.tint,
+    background: Colors.dark.background,
+    card: Colors.dark.surface,
+    text: Colors.dark.text,
+    border: Colors.dark.border,
+    notification: Colors.dark.accent,
   },
 };
 
@@ -87,10 +102,10 @@ export default function RootLayout() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: Colors[colorScheme ?? 'light'].background }}>
       <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
         <QueryClientProvider client={queryClient}>
-          <ThemeProvider value={GlassTheme}>
+          <ThemeProvider value={colorScheme === 'dark' ? DarkThemeConfig : LightTheme}>
             <Stack>
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
               <Stack.Screen name="+not-found" />
@@ -119,7 +134,7 @@ export default function RootLayout() {
                 }}
               />
             </Stack>
-            <StatusBar style="light" />
+            <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
           </ThemeProvider>
         </QueryClientProvider>
       </ClerkProvider>

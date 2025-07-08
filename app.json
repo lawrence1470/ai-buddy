@@ -6,11 +6,13 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "aibuddy",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#ffffff",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.lawrence1470.aibuddy",
+      "userInterfaceStyle": "light",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -20,6 +22,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
+      "userInterfaceStyle": "light",
       "edgeToEdgeEnabled": true
     },
     "web": {

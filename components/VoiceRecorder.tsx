@@ -1,3 +1,4 @@
+import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { AudioService } from "@/services/audioService";
 import { Ionicons } from "@expo/vector-icons";
@@ -201,7 +202,7 @@ const styles = StyleSheet.create({
     gap: 15,
     paddingVertical: 20,
     paddingHorizontal: 20,
-    backgroundColor: "#F8F6F0",
+    backgroundColor: Colors.light.background,
   },
   animationContainer: {
     position: "relative",

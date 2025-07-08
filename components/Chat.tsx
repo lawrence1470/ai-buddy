@@ -1,3 +1,4 @@
+import { Colors } from "@/constants/Colors";
 import { useChatMutation } from "@/hooks/useChat";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useSelectedBuddy } from "@/hooks/useSelectedBuddy";
@@ -13,6 +14,7 @@ import React, {
   useState,
 } from "react";
 import { FlatList, StyleSheet, View } from "react-native";
+import Loading from "./Loading";
 import { ThemedText } from "./ThemedText";
 import VoiceRecorder from "./VoiceRecorder";
 
@@ -295,12 +297,14 @@ const Chat = forwardRef<ChatRef, ChatProps>(
               isUser
                 ? [
                     styles.userBubble,
-                    { backgroundColor: isDark ? "#667EEA" : "#667EEA" },
+                    { backgroundColor: isDark ? Colors.dark.gradientStart : Colors.light.gradientStart },
                   ]
                 : [
                     styles.aiBubble,
                     {
-                      backgroundColor: isDark ? "#2C2C2E" : "#FFFFFF",
+                      backgroundColor: isDark ? Colors.dark.surface : Colors.light.surface,
+                      borderWidth: 1,
+                      borderColor: isDark ? Colors.dark.border : Colors.light.border,
                     },
                   ],
             ]}
@@ -311,7 +315,7 @@ const Chat = forwardRef<ChatRef, ChatProps>(
                 isUser
                   ? styles.userMessageText
                   : {
-                      color: isDark ? "#FFFFFF" : "#1C1C1E",
+                      color: isDark ? Colors.dark.text : Colors.light.text,
                     },
               ]}
             >
@@ -328,7 +332,7 @@ const Chat = forwardRef<ChatRef, ChatProps>(
           <ThemedText
             style={[
               styles.timestamp,
-              { color: isDark ? "#8E8E93" : "#8E8E93" },
+              { color: isDark ? Colors.dark.textTertiary : Colors.light.textTertiary },
             ]}
           >
             {messageTime}
@@ -356,7 +360,7 @@ const Chat = forwardRef<ChatRef, ChatProps>(
           <ThemedText
             style={[
               styles.errorText,
-              { color: isDark ? "#FF6B6B" : "#DC2626", marginTop: 8 },
+              { color: Colors.light.accent, marginTop: 8 },
             ]}
           >
             Note: Using default voice (couldn&apos;t load your selected buddy)
@@ -370,21 +374,11 @@ const Chat = forwardRef<ChatRef, ChatProps>(
 
       return (
         <View style={[styles.messageContainer, styles.aiMessageContainer]}>
-          <View
-            style={[
-              styles.messageBubble,
-              styles.aiBubble,
-              {
-                backgroundColor: isDark ? "#2C2C2E" : "#FFFFFF",
-              },
-            ]}
-          >
-            <View style={styles.typingIndicator}>
-              <View style={[styles.typingDot, styles.typingDot1]} />
-              <View style={[styles.typingDot, styles.typingDot2]} />
-              <View style={[styles.typingDot, styles.typingDot3]} />
-            </View>
-          </View>
+          <Loading 
+            size={30} 
+            fullScreen={false} 
+            message={isAIResponding ? "AI is thinking..." : "Loading..."}
+          />
         </View>
       );
     };
@@ -467,15 +461,15 @@ const styles = StyleSheet.create({
       width: 0,
       height: 1,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
     elevation: 2,
   },
   userBubble: {
-    borderBottomRightRadius: 4,
+    borderBottomRightRadius: 0,
   },
   aiBubble: {
-    borderBottomLeftRadius: 4,
+    borderBottomLeftRadius: 0,
   },
   messageText: {
     fontSize: 16,
@@ -496,27 +490,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 4,
     marginHorizontal: 8,
-  },
-  typingIndicator: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingVertical: 4,
-  },
-  typingDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#8E8E93",
-  },
-  typingDot1: {
-    opacity: 0.4,
-  },
-  typingDot2: {
-    opacity: 0.6,
-  },
-  typingDot3: {
-    opacity: 0.8,
   },
 });
 
