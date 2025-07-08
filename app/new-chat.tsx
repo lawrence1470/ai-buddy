@@ -4,6 +4,7 @@ import Orb from "@/components/Orb";
 import SessionEndModal from "@/components/SessionEndModal";
 import { ThemedText } from "@/components/ThemedText";
 import { useAISpeaking } from "@/hooks/useAISpeaking";
+import { useSelectedBuddy } from "@/hooks/useSelectedBuddy";
 import { ChatMessage } from "@/services/chatService";
 import { router } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
@@ -26,6 +27,20 @@ export default function NewChatScreen() {
   const [sessionStartTime] = useState<Date>(new Date());
   const isSpeaking = useAISpeaking();
   const chatRef = useRef<ChatRef>(null);
+
+  // Get user's selected buddy from backend
+  const { data: selectedBuddy } = useSelectedBuddy();
+
+  // Debug: Log selected buddy color scheme
+  useEffect(() => {
+    if (selectedBuddy) {
+      console.log("=== Chat Screen Buddy Orb Colors ===");
+      console.log("Buddy name:", selectedBuddy.name);
+      console.log("Color scheme:", selectedBuddy.avatar?.color_scheme);
+      console.log("Primary color:", selectedBuddy.avatar?.color_scheme?.[0]);
+      console.log("===================================");
+    }
+  }, [selectedBuddy]);
 
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
@@ -130,12 +145,24 @@ export default function NewChatScreen() {
         {!isKeyboardVisible && (
           <View style={styles.aiBuddySection}>
             <View style={styles.orbContainer}>
-              <Orb
-                size={120}
-                color="#667EEA"
-                animated={true}
-                isSpeaking={isSpeaking}
-              />
+              {(() => {
+                // Use the correct field name from backend: color_schema instead of avatar.color_scheme
+                const colorSchema = (selectedBuddy as any)?.color_schema;
+                const orbColor = colorSchema?.primary || "#667EEA";
+                const orbColors = colorSchema
+                  ? [colorSchema.primary, colorSchema.secondary]
+                  : undefined;
+
+                return (
+                  <Orb
+                    size={120}
+                    color={orbColor}
+                    colors={orbColors}
+                    animated={true}
+                    isSpeaking={isSpeaking}
+                  />
+                );
+              })()}
             </View>
           </View>
         )}

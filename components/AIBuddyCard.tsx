@@ -5,6 +5,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import React, { useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import Orb from "./Orb";
+import { Text } from "./typography";
 import { ThemedText } from "./ThemedText";
 
 interface AIBuddyCardProps {
@@ -76,8 +77,10 @@ export default function AIBuddyCard({
   };
 
   const getGradientColors = (): [string, string] => {
-    if (buddy.avatar?.color_scheme && buddy.avatar.color_scheme.length >= 2) {
-      return [buddy.avatar.color_scheme[0], buddy.avatar.color_scheme[1]];
+    // Use the correct field name from backend: color_schema instead of avatar.color_scheme
+    const colorSchema = (buddy as any).color_schema;
+    if (colorSchema?.primary && colorSchema?.secondary) {
+      return [colorSchema.primary, colorSchema.secondary];
     }
     return ["#667EEA", "#764BA2"]; // Default gradient
   };
@@ -104,13 +107,24 @@ export default function AIBuddyCard({
         end={{ x: 1, y: 1 }}
       >
         <View style={styles.avatarContainer}>
-          <Orb
-            size={60}
-            colors={buddy.avatar?.color_scheme}
-            color={buddy.avatar?.color_scheme?.[0] || "#667EEA"}
-            animated={true}
-            isSpeaking={isPlaying}
-          />
+          {(() => {
+            // Use the correct field name from backend: color_schema instead of avatar.color_scheme
+            const colorSchema = (buddy as any).color_schema;
+            const orbColor = colorSchema?.primary || "#667EEA";
+            const orbColors = colorSchema
+              ? [colorSchema.primary, colorSchema.secondary]
+              : undefined;
+
+            return (
+              <Orb
+                size={60}
+                colors={orbColors}
+                color={orbColor}
+                animated={true}
+                isSpeaking={isPlaying}
+              />
+            );
+          })()}
         </View>
 
         {/* Play Button */}
@@ -152,20 +166,21 @@ export default function AIBuddyCard({
 
       {/* Content */}
       <View style={styles.content}>
-        <ThemedText
-          style={[styles.name, { color: isDark ? "#FFFFFF" : "#1C1C1E" }]}
+        <Text
+          variant="h5"
+          lightColor="#1C1C1E"
+          darkColor="#FFFFFF"
         >
           {buddy.name}
-        </ThemedText>
+        </Text>
 
-        <ThemedText
-          style={[
-            styles.description,
-            { color: isDark ? "#8E8E93" : "#666666" },
-          ]}
+        <Text
+          variant="bodySmall"
+          lightColor="#666666"
+          darkColor="#8E8E93"
         >
           {buddy.personality?.description}
-        </ThemedText>
+        </Text>
 
         {/* MBTI & Voice Info */}
         <View style={styles.infoRow}>

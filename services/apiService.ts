@@ -62,16 +62,50 @@ export class ApiService {
   // Chat API
   static async sendChatMessage(request: ChatRequest): Promise<ChatResponse> {
     try {
+      console.log("🚀 Sending chat message to:", `${API_CONFIG.BASE_URL}/chat`);
+      console.log("📤 Request payload:", JSON.stringify(request, null, 2));
+
       const response = await apiClient.post<ChatResponse>("/chat", request);
+
+      console.log("✅ Chat response received:", response.status);
+      console.log("📥 Response data:", JSON.stringify(response.data, null, 2));
+
       return response.data;
     } catch (error) {
+      console.error("❌ Chat API Error Details:");
+
       if (axios.isAxiosError(error)) {
+        console.error("Status:", error.response?.status);
+        console.error("Status Text:", error.response?.statusText);
+        console.error("Response Data:", error.response?.data);
+        console.error("Request URL:", error.config?.url);
+        console.error("Request Method:", error.config?.method);
+        console.error("Request Data:", error.config?.data);
+
+        // More specific error handling
+        const status = error.response?.status;
+        if (status === 500) {
+          throw new Error(
+            "Server error - the backend is having issues processing your request"
+          );
+        } else if (status === 404) {
+          throw new Error(
+            "Chat endpoint not found - check if the backend is running"
+          );
+        } else if (status === 400) {
+          throw new Error(
+            error.response?.data?.error || "Invalid request format"
+          );
+        }
+
         throw new Error(
           error.response?.data?.error ||
             error.message ||
             "Failed to send chat message"
         );
       }
+
+      console.error("Non-Axios error:", error);
       throw error;
     }
   }

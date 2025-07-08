@@ -1,4 +1,3 @@
-import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useRef } from "react";
 import { Animated, StyleSheet, View } from "react-native";
 
@@ -18,6 +17,14 @@ export default function Orb({
   animated = true,
   isSpeaking = false,
 }: OrbProps) {
+  // Debug: Log what colors the Orb component is actually receiving
+  console.log("🔴 Orb Component Debug:", {
+    receivedColor: color,
+    receivedColors: colors,
+    size,
+    isSpeaking,
+  });
+
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
   const opacityAnim = useRef(new Animated.Value(0.8)).current;
@@ -32,6 +39,13 @@ export default function Orb({
   // Determine colors to use
   const orbColors = colors && colors.length >= 2 ? colors : [color, color];
   const primaryColor = colors && colors.length > 0 ? colors[0] : color;
+
+  // Debug: Log the final computed colors
+  console.log("🔴 Orb Final Colors:", {
+    primaryColor,
+    orbColors,
+    usingGradient: colors && colors.length >= 2,
+  });
 
   useEffect(() => {
     if (!animated) return;
@@ -205,28 +219,13 @@ export default function Orb({
   const currentOpacity = isSpeaking ? 0.9 : opacityAnim;
 
   const OrbContent = ({ children }: { children: React.ReactNode }) => {
-    if (colors && colors.length >= 2) {
-      return (
-        <LinearGradient
-          colors={orbColors as [string, string, ...string[]]}
-          style={[
-            styles.orb,
-            {
-              width: size,
-              height: size,
-              shadowColor: isSpeaking ? primaryColor : "#667EEA",
-              shadowRadius: isSpeaking ? 30 : 20,
-              shadowOpacity: isSpeaking ? 0.8 : 0.6,
-            },
-          ]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          {children}
-        </LinearGradient>
-      );
-    }
+    console.log("🔴 OrbContent rendering with:", {
+      colors,
+      orbColors,
+      primaryColor,
+    });
 
+    // Use solid color instead of gradient to avoid rendering issues
     return (
       <View
         style={[
@@ -234,8 +233,8 @@ export default function Orb({
           {
             width: size,
             height: size,
-            backgroundColor: primaryColor,
-            shadowColor: isSpeaking ? primaryColor : "#667EEA",
+            backgroundColor: primaryColor, // Use the actual backend color
+            shadowColor: isSpeaking ? primaryColor : primaryColor,
             shadowRadius: isSpeaking ? 30 : 20,
             shadowOpacity: isSpeaking ? 0.8 : 0.6,
           },

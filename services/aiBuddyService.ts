@@ -39,6 +39,20 @@ export class AIBuddyService {
       console.log("Number of buddies:", data.ai_buddies?.length || 0);
       if (data.ai_buddies && data.ai_buddies.length > 0) {
         console.log("First buddy voice data:", data.ai_buddies[0].voice);
+        console.log("First buddy avatar data:", data.ai_buddies[0].avatar);
+        console.log(
+          "First buddy color scheme:",
+          data.ai_buddies[0].avatar?.color_scheme
+        );
+
+        // Log all buddies' color schemes
+        data.ai_buddies.forEach((buddy, index) => {
+          console.log(`Buddy ${index + 1} (${buddy.name}):`, {
+            name: buddy.name,
+            avatar: buddy.avatar,
+            color_scheme: buddy.avatar?.color_scheme,
+          });
+        });
       }
       console.log("==============================");
 
@@ -105,18 +119,37 @@ export class AIBuddyService {
 
       const data: SelectedBuddyResponse = await response.json();
 
+      console.log("=== Selected Buddy Response Debug ===");
+      console.log("Selected buddy response:", JSON.stringify(data, null, 2));
+      console.log("====================================");
+
       // If we have buddy details, return them
       if (data.buddy_details) {
         // Convert the buddy details to a full AIBuddy object
         const fullBuddy = await this.getAIBuddyDetails(
           data.selected_buddy || "oliver"
         );
+
+        console.log("=== Full Selected Buddy Debug ===");
+        console.log("Full buddy data:", JSON.stringify(fullBuddy, null, 2));
+        console.log("Buddy avatar:", fullBuddy?.avatar);
+        console.log("Buddy color scheme:", fullBuddy?.avatar?.color_scheme);
+        console.log("=================================");
+
         return fullBuddy;
       }
 
       // Get the buddy by ID
       if (data.selected_buddy) {
-        return this.getAIBuddyDetails(data.selected_buddy);
+        const buddy = await this.getAIBuddyDetails(data.selected_buddy);
+
+        console.log("=== Selected Buddy by ID Debug ===");
+        console.log("Buddy data:", JSON.stringify(buddy, null, 2));
+        console.log("Buddy avatar:", buddy?.avatar);
+        console.log("Buddy color scheme:", buddy?.avatar?.color_scheme);
+        console.log("=================================");
+
+        return buddy;
       }
 
       return null;

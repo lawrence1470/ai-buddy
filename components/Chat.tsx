@@ -49,8 +49,8 @@ const Chat = forwardRef<ChatRef, ChatProps>(
 
     // Get selected AI buddy
     const {
-      selectedBuddy,
-      loading: buddyLoading,
+      data: selectedBuddy,
+      isLoading: buddyLoading,
       error: buddyError,
     } = useSelectedBuddy();
 
@@ -359,7 +359,7 @@ const Chat = forwardRef<ChatRef, ChatProps>(
               { color: isDark ? "#FF6B6B" : "#DC2626", marginTop: 8 },
             ]}
           >
-            Note: Using default voice (couldn't load your selected buddy)
+            Note: Using default voice (couldn&apos;t load your selected buddy)
           </ThemedText>
         )}
       </View>

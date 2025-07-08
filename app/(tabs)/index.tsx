@@ -3,6 +3,7 @@ import PhoneAuthModal from "@/components/PhoneAuthModal";
 import ProfileCompletionCard from "@/components/ProfileCompletionCard";
 import RecentSessions from "@/components/RecentSessions";
 import { ThemedText } from "@/components/ThemedText";
+import { Text, H2 } from "@/components/typography";
 import VoiceSearchCard from "@/components/VoiceSearchCard";
 import { useAISpeaking } from "@/hooks/useAISpeaking";
 import { useColorScheme } from "@/hooks/useColorScheme";
@@ -10,7 +11,7 @@ import { useSelectedBuddy } from "@/hooks/useSelectedBuddy";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useAuth, useUser } from "@clerk/clerk-expo";
 import { router } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Alert,
   Pressable,
@@ -36,6 +37,37 @@ export default function HomeScreen() {
     isLoading: isLoadingBuddy,
     error: buddyError,
   } = useSelectedBuddy();
+
+  // Debug: Log selected buddy color scheme
+  useEffect(() => {
+    console.log("=== Home Screen Buddy Debug ===");
+    console.log("selectedBuddy:", selectedBuddy);
+    console.log("isLoadingBuddy:", isLoadingBuddy);
+    console.log("buddyError:", buddyError);
+
+    if (selectedBuddy) {
+      console.log("Buddy name:", selectedBuddy.name);
+      console.log("Full buddy object:", JSON.stringify(selectedBuddy, null, 2));
+      console.log("Avatar object:", selectedBuddy.avatar);
+      console.log("Color schema object:", (selectedBuddy as any).color_schema);
+      console.log(
+        "Primary color:",
+        (selectedBuddy as any).color_schema?.primary
+      );
+      console.log(
+        "Secondary color:",
+        (selectedBuddy as any).color_schema?.secondary
+      );
+      console.log("Old color scheme:", selectedBuddy.avatar?.color_scheme);
+      console.log(
+        "Old primary color:",
+        selectedBuddy.avatar?.color_scheme?.[0]
+      );
+    } else {
+      console.log("No selectedBuddy available");
+    }
+    console.log("==============================");
+  }, [selectedBuddy, isLoadingBuddy, buddyError]);
 
   const isDark = colorScheme === "dark";
 
@@ -166,30 +198,48 @@ export default function HomeScreen() {
           <View style={styles.headerContent}>
             <View style={styles.headerTextContainer}>
               <View style={styles.avatarContainer}>
-                <Orb
-                  size={60}
-                  color="#667EEA"
-                  animated={true}
-                  isSpeaking={isSpeaking}
-                />
+                {(() => {
+                  // Use the correct field name from backend: color_schema instead of avatar.color_scheme
+                  const colorSchema = (selectedBuddy as any)?.color_schema;
+                  const orbColor = colorSchema?.primary || "#667EEA";
+                  const orbColors = colorSchema
+                    ? [colorSchema.primary, colorSchema.secondary]
+                    : undefined;
+
+                  console.log("🎨 Orb Render Debug:", {
+                    buddyName: selectedBuddy?.name,
+                    buddyId: selectedBuddy?.id,
+                    colorSchema,
+                    orbColor,
+                    orbColors,
+                    selectedBuddy: !!selectedBuddy,
+                  });
+
+                  return (
+                    <Orb
+                      size={60}
+                      color={orbColor}
+                      colors={orbColors}
+                      animated={true}
+                      isSpeaking={isSpeaking}
+                    />
+                  );
+                })()}
               </View>
               <View style={styles.headerText}>
-                <ThemedText
-                  style={[
-                    styles.greeting,
-                    { color: isDark ? "#FFFFFF" : "#1C1C1E" },
-                  ]}
+                <H2
+                  lightColor="#1C1C1E"
+                  darkColor="#FFFFFF"
                 >
                   {getGreeting()}
-                </ThemedText>
-                <ThemedText
-                  style={[
-                    styles.subtitle,
-                    { color: isDark ? "#8E8E93" : "#8E8E93" },
-                  ]}
+                </H2>
+                <Text
+                  variant="bodySmall"
+                  lightColor="#8E8E93"
+                  darkColor="#8E8E93"
                 >
                   {getSubtitle()}
-                </ThemedText>
+                </Text>
               </View>
             </View>
           </View>
