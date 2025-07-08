@@ -6,6 +6,8 @@ import RecentSessions from "@/components/RecentSessions";
 import { ThemedText } from "@/components/ThemedText";
 import { Text, H2 } from "@/components/typography";
 import VoiceSearchCard from "@/components/VoiceSearchCard";
+import ChatBubbleIcon from "@/components/icons/ChatBubbleIcon";
+import SparkleIcon from "@/components/icons/SparkleIcon";
 import { Colors } from "@/constants/Colors";
 import { useAISpeaking } from "@/hooks/useAISpeaking";
 import { useColorScheme } from "@/hooks/useColorScheme";
@@ -272,7 +274,7 @@ export default function HomeScreen() {
             onPress={handleNewChat}
           >
             <View style={styles.cardContent}>
-              <ThemedText style={styles.cardIcon}>✏️</ThemedText>
+              <ChatBubbleIcon size={20} color={Colors[colorScheme ?? "light"].tint} />
               <View style={[styles.newBadge, { backgroundColor: Colors[colorScheme ?? "light"].accent }]}>
                 <ThemedText style={[styles.newBadgeText, { color: "#FFFFFF" }]}>New</ThemedText>
               </View>

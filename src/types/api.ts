@@ -543,6 +543,24 @@ export interface components {
                 /** @example 🎩 */
                 emoji?: string;
             };
+            color_schema?: {
+                /** @example #E74C3C */
+                accent?: string;
+                /** @example #ECF0F1 */
+                background?: string;
+                /** @example Professional BBC-inspired color scheme with deep blues and authoritative reds */
+                description?: string;
+                /** @example linear-gradient(135deg, #2C3E50 0%, #34495E 100%) */
+                gradient?: string;
+                /** @example #2C3E50 */
+                primary?: string;
+                /** @example #34495E */
+                secondary?: string;
+                /** @example #FFFFFF */
+                text?: string;
+                /** @example professional */
+                theme?: string;
+            };
             /** @example 🎩 Oliver - The British Gentleman */
             display_name?: string;
             /** @example oliver */

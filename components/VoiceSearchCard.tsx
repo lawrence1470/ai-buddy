@@ -1,6 +1,7 @@
 import React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { ThemedText } from "./ThemedText";
+import AIBuddyIcon from "./icons/AIBuddyIcon";
 
 interface VoiceSearchCardProps {
   onPress?: () => void;
@@ -20,7 +21,7 @@ export default function VoiceSearchCard({
       disabled={disabled}
     >
       <View style={styles.searchContent}>
-        <ThemedText style={styles.searchIcon}>🤖</ThemedText>
+        <AIBuddyIcon size={24} color="#7DA3E0" style={styles.searchIcon} />
         <ThemedText style={styles.searchText}>
           {isSignedIn ? "Choose an AI buddy" : "Sign in to choose an AI buddy"}
         </ThemedText>
@@ -53,7 +54,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   searchIcon: {
-    fontSize: 20,
     marginRight: 12,
   },
   searchText: {

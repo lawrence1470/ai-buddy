@@ -1,0 +1,29 @@
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Head/Brain -->
+  <circle cx="12" cy="10" r="7" fill="#7DA3E0" opacity="0.2"/>
+  <circle cx="12" cy="10" r="7" stroke="#7DA3E0" stroke-width="2"/>
+  
+  <!-- AI Neural Network Pattern -->
+  <circle cx="9" cy="8" r="1.5" fill="#7DA3E0"/>
+  <circle cx="15" cy="8" r="1.5" fill="#7DA3E0"/>
+  <circle cx="12" cy="11" r="1.5" fill="#7DA3E0"/>
+  
+  <!-- Connection lines -->
+  <path d="M9 8L12 11M15 8L12 11" stroke="#7DA3E0" stroke-width="1" opacity="0.5"/>
+  
+  <!-- Friendly smile -->
+  <path d="M8 12C8 12 9.5 14 12 14C14.5 14 16 12 16 12" stroke="#7DA3E0" stroke-width="2" stroke-linecap="round"/>
+  
+  <!-- Speech bubble with dots (representing AI communication) -->
+  <path d="M19 5C19 3.89543 18.1046 3 17 3H15C13.8954 3 13 3.89543 13 5V6C13 7.10457 13.8954 8 15 8H15.5L16.5 9.5V8H17C18.1046 8 19 7.10457 19 6V5Z" fill="#FFB4D2" opacity="0.3"/>
+  <path d="M19 5C19 3.89543 18.1046 3 17 3H15C13.8954 3 13 3.89543 13 5V6C13 7.10457 13.8954 8 15 8H15.5L16.5 9.5V8H17C18.1046 8 19 7.10457 19 6V5Z" stroke="#FFB4D2" stroke-width="1.5"/>
+  
+  <!-- Three dots in speech bubble -->
+  <circle cx="14.5" cy="5.5" r="0.5" fill="#FFB4D2"/>
+  <circle cx="16" cy="5.5" r="0.5" fill="#FFB4D2"/>
+  <circle cx="17.5" cy="5.5" r="0.5" fill="#FFB4D2"/>
+  
+  <!-- Body suggestion (simple rounded shape) -->
+  <path d="M12 17C14 17 16 18 16 20V22H8V20C8 18 10 17 12 17Z" fill="#7DA3E0" opacity="0.2"/>
+  <path d="M12 17C14 17 16 18 16 20V22H8V20C8 18 10 17 12 17Z" stroke="#7DA3E0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

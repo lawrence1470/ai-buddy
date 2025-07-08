@@ -1,6 +1,7 @@
 import { Tabs } from "expo-router";
 import React from "react";
 import { Platform } from "react-native";
+import { Ionicons, MaterialCommunityIcons, Feather } from "@expo/vector-icons";
 
 import { HapticTab } from "@/components/HapticTab";
 import { IconSymbol } from "@/components/ui/IconSymbol";
@@ -52,9 +53,9 @@ export default function TabLayout() {
         options={{
           title: "Home",
           tabBarIcon: ({ color, focused }) => (
-            <IconSymbol
+            <Ionicons
+              name={focused ? "home" : "home-outline"}
               size={focused ? 26 : 24}
-              name="house.fill"
               color={color}
             />
           ),
@@ -65,9 +66,9 @@ export default function TabLayout() {
         options={{
           title: "Personality",
           tabBarIcon: ({ color, focused }) => (
-            <IconSymbol
-              size={focused ? 26 : 24}
-              name="person.crop.circle.fill"
+            <MaterialCommunityIcons
+              name={focused ? "brain" : "brain"}
+              size={focused ? 28 : 26}
               color={color}
             />
           ),
@@ -78,9 +79,9 @@ export default function TabLayout() {
         options={{
           title: "Settings",
           tabBarIcon: ({ color, focused }) => (
-            <IconSymbol
-              size={focused ? 26 : 24}
-              name="gearshape.fill"
+            <Feather
+              name="settings"
+              size={focused ? 24 : 22}
               color={color}
             />
           ),
