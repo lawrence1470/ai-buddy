@@ -1,4 +1,5 @@
 import { components } from "@/src/types/api";
+import { Colors } from "@/constants/Colors";
 import { ApiService } from "./apiService";
 
 // Use API types
@@ -21,7 +22,9 @@ export class SessionService {
     limit: number = 10
   ): Promise<Session[]> {
     try {
-      return await ApiService.getUserSessions(userId, limit);
+      const sessions = await ApiService.getUserSessions(userId, limit);
+      // Ensure we return valid data
+      return Array.isArray(sessions) ? sessions : SessionService.getMockSessions();
     } catch (error) {
       console.error("Failed to fetch user sessions:", error);
 
@@ -63,27 +66,41 @@ export class SessionService {
    * Convert Session to SessionWithUI by adding display properties
    */
   static enhanceSessionsForUI(sessions: Session[]): SessionWithUI[] {
+    // Ensure sessions is an array
+    if (!Array.isArray(sessions)) {
+      console.warn("enhanceSessionsForUI received non-array:", sessions);
+      return [];
+    }
+
     const icons = ["💬", "🤖", "📅", "💡", "🎯", "📱", "🔍", "⚡"];
     const colors = [
-      "#667EEA",
-      "#764ABC",
-      "#06B6D4",
-      "#10B981",
+      Colors.light.tint,
+      Colors.light.gradientPink,
+      Colors.light.accent,
+      Colors.light.accentDim,
+      "#10B981", 
       "#F59E0B",
-      "#EF4444",
       "#8B5CF6",
       "#EC4899",
     ];
 
     return sessions
-      .filter((session) => session.session_id)
-      .map((session, index) => ({
-        ...session,
-        id: session.session_id!,
-        title: session.topic_summary || "New Conversation",
-        icon: icons[index % icons.length],
-        backgroundColor: colors[index % colors.length],
-      }));
+      .filter((session) => session && session.session_id)
+      .map((session, index) => {
+        try {
+          return {
+            ...session,
+            id: session.session_id!,
+            title: session.topic_summary || "New Conversation",
+            icon: icons[index % icons.length],
+            backgroundColor: colors[index % colors.length],
+          };
+        } catch (error) {
+          console.error("Error enhancing session:", error, session);
+          return null;
+        }
+      })
+      .filter((session): session is SessionWithUI => session !== null);
   }
 
   /**

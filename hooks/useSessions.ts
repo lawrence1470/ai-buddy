@@ -11,6 +11,8 @@ export function useSessions() {
   const fetchSessions = async () => {
     if (!user?.id) {
       setIsLoading(false);
+      setSessions([]); // Ensure sessions is always an array
+      setError(null);
       return;
     }
 

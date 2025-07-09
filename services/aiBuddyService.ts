@@ -114,6 +114,10 @@ export class AIBuddyService {
       );
 
       if (!response.ok) {
+        if (response.status === 502) {
+          console.warn("Backend server error (502). The server may be down or restarting.");
+          return null;
+        }
         throw new Error(`Failed to fetch selected buddy: ${response.status}`);
       }
 
@@ -158,6 +162,9 @@ export class AIBuddyService {
         "Error fetching user's selected buddy from backend:",
         error
       );
+      if (error instanceof Error && error.message.includes("502")) {
+        return null;
+      }
       throw error;
     }
   }

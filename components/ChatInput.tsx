@@ -24,8 +24,7 @@ export default function ChatInput({
 }: ChatInputProps) {
   const [inputText, setInputText] = useState("");
   const colorScheme = useColorScheme();
-
-  const isDark = colorScheme === "dark";
+  const isDark = false; // Force light mode as per useColorScheme hook
 
   const handleSendMessage = useCallback(() => {
     if (inputText.trim() && onSendMessage && !disabled) {
@@ -70,6 +69,7 @@ export default function ChatInput({
               backgroundColor: isDark ? "#2C2C2E" : "#FFFFFF",
               color: isDark ? "#FFFFFF" : "#000000",
               borderColor: isDark ? "#3A3A3C" : "#E5E5EA",
+              textAlign: inputText ? "left" : "center",
             },
             !showVoiceButton && styles.textInputFullWidth,
           ]}

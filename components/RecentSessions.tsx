@@ -1,6 +1,8 @@
 import { ThemedText } from "@/components/ThemedText";
+import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useSessions } from "@/hooks/useSessions";
+import { SessionWithUI } from "@/services/sessionService";
 import React, { forwardRef, useImperativeHandle } from "react";
 import {
   ActivityIndicator,
@@ -29,12 +31,7 @@ interface RecentSessionsProps {
 }
 
 interface SessionRowProps {
-  session: {
-    id: string;
-    title: string;
-    icon: string;
-    backgroundColor: string;
-  };
+  session: SessionWithUI;
   onPress: () => void;
   onDelete: () => void;
   onDeleteButtonPress: () => void;
@@ -137,7 +134,7 @@ const SessionRow = forwardRef<SessionRowRef, SessionRowProps>(
               <ThemedText
                 style={[
                   styles.recentText,
-                  { color: isDark ? "#FFFFFF" : "#1C1C1E" },
+                  { color: Colors[colorScheme ?? 'light'].text },
                 ]}
                 numberOfLines={1}
               >
@@ -159,7 +156,7 @@ export default function RecentSessions({
   onSessionPress,
   onSessionDelete,
 }: RecentSessionsProps) {
-  const colorScheme = useColorScheme();
+  const colorScheme = useColorScheme() || 'light'; // Ensure we always have a valid colorScheme
   const isDark = colorScheme === "dark";
   const sessionRefs = React.useRef<{ [key: string]: SessionRowRef | null }>({});
 
@@ -224,7 +221,7 @@ export default function RecentSessions({
         <View style={styles.loadingContainer}>
           <ActivityIndicator
             size="small"
-            color={isDark ? "#FFFFFF" : "#1C1C1E"}
+            color={Colors[colorScheme ?? 'light'].text}
           />
           <ThemedText
             style={[
@@ -239,8 +236,8 @@ export default function RecentSessions({
     );
   }
 
-  // Show empty state if no sessions
-  if (sessions.length === 0) {
+  // Show empty state if no sessions or if sessions is null/undefined
+  if (!sessions || sessions.length === 0) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
@@ -257,7 +254,7 @@ export default function RecentSessions({
           <ThemedText
             style={[
               styles.emptyText,
-              { color: isDark ? "#999999" : "#666666" },
+              { color: Colors[colorScheme ?? 'light'].textSecondary },
             ]}
           >
             No recent sessions yet
@@ -265,7 +262,7 @@ export default function RecentSessions({
           <ThemedText
             style={[
               styles.emptySubtext,
-              { color: isDark ? "#777777" : "#888888" },
+              { color: Colors[colorScheme ?? 'light'].textTertiary },
             ]}
           >
             Start a conversation to see your history here
@@ -289,19 +286,22 @@ export default function RecentSessions({
       </View>
 
       <View style={styles.recentsContainer}>
-        {sessions.slice(0, 3).map((session) => (
-          <SessionRow
-            key={session.id}
-            ref={(ref) => {
-              sessionRefs.current[session.id] = ref;
-            }}
-            session={session}
-            onPress={() => onSessionPress?.(session.id)}
-            onDelete={() => handleSessionDelete(session.id, session.title)}
-            onDeleteButtonPress={() => handleDirectDelete(session.id)}
-            isDark={isDark}
-          />
-        ))}
+        {(sessions || [])
+          .filter((session) => session && session.id && session.title && session.icon && session.backgroundColor)
+          .slice(0, 3)
+          .map((session) => (
+            <SessionRow
+              key={session.id}
+              ref={(ref) => {
+                sessionRefs.current[session.id] = ref;
+              }}
+              session={session}
+              onPress={() => onSessionPress?.(session.id)}
+              onDelete={() => handleSessionDelete(session.id, session.title)}
+              onDeleteButtonPress={() => handleDirectDelete(session.id)}
+              isDark={isDark}
+            />
+          ))}
       </View>
 
       {error && (
@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
   },
   seeAll: {
     fontSize: 16,
-    color: "#667EEA",
+    color: Colors.light.tint,
   },
   recentsContainer: {
     gap: 0,
@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
   },
   recentMenu: {
     fontSize: 20,
-    color: "#8E8E93",
+    color: Colors.light.tabIconDefault,
     flexShrink: 0,
   },
   deleteButtonContainer: {
@@ -418,7 +418,6 @@ const styles = StyleSheet.create({
   },
   emptySubtext: {
     fontSize: 14,
-    color: "#888888",
   },
   errorContainer: {
     flexDirection: "row",
@@ -430,8 +429,9 @@ const styles = StyleSheet.create({
     color: "#FF3B30",
   },
   retryButton: {
-    backgroundColor: "#667EEA",
-    padding: 10,
+    backgroundColor: Colors.light.tint,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     borderRadius: 8,
   },
   retryText: {

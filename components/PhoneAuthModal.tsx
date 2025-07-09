@@ -1,3 +1,4 @@
+import { Typography } from "@/constants/Typography";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useSignIn, useSignUp } from "@clerk/clerk-expo";
 import React, { useState } from "react";
@@ -12,8 +13,7 @@ import {
   View,
 } from "react-native";
 import { ThemedText } from "./ThemedText";
-import { Text, H3 } from "./typography";
-import { Typography } from "@/constants/Typography";
+import { H3, Text } from "./typography";
 
 interface PhoneAuthModalProps {
   visible: boolean;
@@ -25,7 +25,7 @@ export default function PhoneAuthModal({
   onClose,
 }: PhoneAuthModalProps) {
   const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const isDark = false; // Force light mode as per useColorScheme hook
   const { signIn, setActive } = useSignIn();
   const { signUp } = useSignUp();
 
@@ -67,7 +67,8 @@ export default function PhoneAuthModal({
           console.log("✅ Sign in attempt created:", {
             status: signInAttempt.status,
             identifier: signInAttempt.identifier,
-            supportedFirstFactors: signInAttempt.supportedFirstFactors?.length || 0
+            supportedFirstFactors:
+              signInAttempt.supportedFirstFactors?.length || 0,
           });
 
           // Try to prepare first factor - let Clerk handle the details
@@ -78,17 +79,29 @@ export default function PhoneAuthModal({
             } as any);
             console.log("✅ Phone code preparation successful");
           } catch (prepareError: any) {
-            console.log("⚠️ Simple preparation failed, trying with phoneNumberId:", prepareError.message);
+            console.log(
+              "⚠️ Simple preparation failed, trying with phoneNumberId:",
+              prepareError.message
+            );
             // If the simple approach fails, try with phoneNumberId
             const factors = signInAttempt.supportedFirstFactors || [];
-            console.log("Available factors:", factors.map((f: any) => ({ strategy: f.strategy, phoneNumberId: f.phoneNumberId })));
-            
+            console.log(
+              "Available factors:",
+              factors.map((f: any) => ({
+                strategy: f.strategy,
+                phoneNumberId: f.phoneNumberId,
+              }))
+            );
+
             const phoneCodeFactor = factors.find(
               (factor: any) => factor.strategy === "phone_code"
             );
 
             if (phoneCodeFactor && (phoneCodeFactor as any).phoneNumberId) {
-              console.log("📲 Retrying with phoneNumberId:", (phoneCodeFactor as any).phoneNumberId);
+              console.log(
+                "📲 Retrying with phoneNumberId:",
+                (phoneCodeFactor as any).phoneNumberId
+              );
               await signInAttempt.prepareFirstFactor({
                 strategy: "phone_code",
                 phoneNumberId: (phoneCodeFactor as any).phoneNumberId,
@@ -125,7 +138,10 @@ export default function PhoneAuthModal({
 
       // Try to sign up if sign in failed
       if (signUp) {
-        console.log("👤 Account not found, attempting sign up with:", formattedPhone);
+        console.log(
+          "👤 Account not found, attempting sign up with:",
+          formattedPhone
+        );
         const signUpAttempt = await signUp.create({
           phoneNumber: formattedPhone,
         });
@@ -133,7 +149,7 @@ export default function PhoneAuthModal({
         console.log("✅ Sign up attempt created:", {
           status: signUpAttempt.status,
           phoneNumber: signUpAttempt.phoneNumber,
-          verifications: signUpAttempt.verifications
+          verifications: signUpAttempt.verifications,
         });
 
         console.log("📲 Preparing phone number verification...");
@@ -146,7 +162,9 @@ export default function PhoneAuthModal({
         setIsSignUp(true);
         setStep("code");
         setLoading(false);
-        console.log("🎉 SMS should be sent for new user! Moving to verification step");
+        console.log(
+          "🎉 SMS should be sent for new user! Moving to verification step"
+        );
         Alert.alert("Code Sent!", "Check your phone for the verification code");
       } else {
         throw new Error("Neither sign in nor sign up available");
@@ -159,9 +177,9 @@ export default function PhoneAuthModal({
         errors: error.errors,
         code: error.code,
         status: error.status,
-        stack: error.stack
+        stack: error.stack,
       });
-      
+
       // More helpful error messages
       let errorMessage = "Failed to send code";
       if (error.errors?.[0]?.message) {
@@ -169,7 +187,7 @@ export default function PhoneAuthModal({
       } else if (error.message) {
         errorMessage = error.message;
       }
-      
+
       // Add specific troubleshooting info
       const troubleshootingMsg = `
 ${errorMessage}
@@ -357,10 +375,7 @@ Troubleshooting:
           >
             {/* Header */}
             <View style={styles.header}>
-              <H3
-                lightColor="#000000"
-                darkColor="#FFFFFF"
-              >
+              <H3 lightColor="#000000" darkColor="#FFFFFF">
                 {step === "phone" ? "Sign In" : "Enter Code"}
               </H3>
               <Pressable onPress={handleClose} style={styles.closeButton}>
@@ -387,6 +402,7 @@ Troubleshooting:
                       backgroundColor: isDark ? "#0A0A0A" : "#FAFAFA",
                       color: isDark ? "#FFFFFF" : "#000000",
                       borderColor: isDark ? "#FFFFFF10" : "#00000010",
+                      textAlign: "center",
                     },
                   ]}
                   placeholder="Phone number"

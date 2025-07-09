@@ -19,7 +19,6 @@ AI Buddy is a React Native voice chat application built with Expo that enables c
 ### Type Generation
 
 - `npm run generate-types` - Generate API types from backend OpenAPI spec at https://ai-buddy-backend.onrender.com/swagger.json
-- `npm run update-types` - Generate Supabase database types
 
 ### Development Workflow
 
@@ -34,8 +33,7 @@ AI Buddy is a React Native voice chat application built with Expo that enables c
 - **Frontend**: React Native with Expo (~53.0.11)
 - **Navigation**: Expo Router with file-based routing
 - **State Management**: TanStack Query for server state, React hooks for local state
-- **Authentication**: Clerk for user authentication
-- **Database**: Supabase (primarily for user profiles)
+- **Authentication**: Clerk for user authentication and profile management
 - **Backend Integration**: Custom REST API at https://ai-buddy-backend.onrender.com
 - **Styling**: StyleSheet with glassmorphism design theme
 
@@ -88,8 +86,7 @@ The app integrates with a custom backend API running on https://ai-buddy-backend
 
 ### Authentication & User Management
 
-- Clerk handles user authentication and session management
-- User profiles stored in Supabase
+- Clerk handles user authentication, session management, and user profiles
 - Backend API receives user context for personalized responses
 
 ### Voice & Audio Features
@@ -104,7 +101,6 @@ The app integrates with a custom backend API running on https://ai-buddy-backend
 Required environment variables:
 
 - `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` - Clerk authentication
-- `EXPO_PUBLIC_SUPABASE_URL` & `EXPO_PUBLIC_SUPABASE_ANON_KEY` - Supabase database
 - `EXPO_PUBLIC_API_BASE_URL` - Backend API URL (defaults to https://ai-buddy-backend.onrender.com)
 - `EXPO_PUBLIC_OPENAI_API_KEY` - OpenAI API access (if needed for direct client calls)
 

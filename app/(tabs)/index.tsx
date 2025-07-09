@@ -12,7 +12,6 @@ import { Colors } from "@/constants/Colors";
 import { useAISpeaking } from "@/hooks/useAISpeaking";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useSelectedBuddy } from "@/hooks/useSelectedBuddy";
-import { useUserProfile } from "@/hooks/useUserProfile";
 import { useAuth, useUser } from "@clerk/clerk-expo";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
@@ -44,8 +43,7 @@ export default function HomeScreen() {
     console.log("=============================");
   }, [colorScheme]);
 
-  // Get user profile from Supabase
-  const { data: userProfile } = useUserProfile();
+  // Use Clerk user data directly instead of Supabase
 
   // Get user's selected buddy from backend
   const {
@@ -164,8 +162,8 @@ export default function HomeScreen() {
   const getGreeting = () => {
     if (!isSignedIn) return "Hello there";
 
-    // Prefer Supabase profile name, fallback to Clerk firstName
-    const name = userProfile?.name || user?.firstName;
+    // Use Clerk firstName directly
+    const name = user?.firstName;
 
     if (name) {
       return `Hello ${name}`;

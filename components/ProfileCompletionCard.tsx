@@ -1,11 +1,11 @@
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
-import { useProfileCompletion } from "@/hooks/useUserProfile";
 import { useUser } from "@clerk/clerk-expo";
 import { router } from "expo-router";
 import React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { ThemedText } from "./ThemedText";
+import SparkleIcon from "./icons/SparkleIcon";
 
 interface ProfileCompletionCardProps {
   onPress?: () => void;
@@ -18,14 +18,13 @@ export default function ProfileCompletionCard({
   const { user } = useUser();
   const isDark = colorScheme === "dark";
 
-  // Use the TanStack Query hook to check profile completion
-  const { data: hasCompletedProfile, isLoading } = useProfileCompletion();
+  // Check if user has completed their profile using Clerk data
+  const hasCompletedProfile = user?.firstName && user.firstName.trim().length > 0;
 
   // Don't show the card if:
   // - User is not signed in
-  // - Profile completion check is loading
-  // - User has already completed their profile
-  if (!user || isLoading || hasCompletedProfile) {
+  // - User has already completed their profile (has firstName)
+  if (!user || hasCompletedProfile) {
     return null;
   }
 
@@ -42,7 +41,7 @@ export default function ProfileCompletionCard({
     <View style={styles.container}>
       <Pressable style={styles.card} onPress={handlePress}>
         <View style={styles.cardContent}>
-          <ThemedText style={styles.cardIcon}>✨</ThemedText>
+          <SparkleIcon size={20} color="#FFB4D2" />
           <View style={styles.completeBadge}>
             <ThemedText style={styles.completeBadgeText}>Complete</ThemedText>
           </View>

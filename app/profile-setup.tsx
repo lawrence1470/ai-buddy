@@ -1,9 +1,9 @@
+import SparkleIcon from "@/components/icons/SparkleIcon";
 import { ThemedText } from "@/components/ThemedText";
-import { Text, H3 } from "@/components/typography";
+import { H3 } from "@/components/typography";
 import { Colors } from "@/constants/Colors";
 import { Typography } from "@/constants/Typography";
 import { useColorScheme } from "@/hooks/useColorScheme";
-import { useUpsertUserProfile, useUserProfile } from "@/hooks/useUserProfile";
 import { useUser } from "@clerk/clerk-expo";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -21,37 +21,17 @@ import {
 export default function ProfileSetupScreen() {
   const colorScheme = useColorScheme();
   const { user } = useUser();
-  const isDark = colorScheme === "dark";
-
-  // Get existing profile data
-  const { data: existingProfile, isLoading: isProfileLoading } =
-    useUserProfile();
-
-  // Mutation for saving profile
-  const upsertProfile = useUpsertUserProfile();
 
   const [firstName, setFirstName] = useState("");
 
-  // Update firstName when profile data loads
+  // Update firstName when user data loads
   useEffect(() => {
-    console.log("Profile data:", existingProfile);
-    console.log("User data:", user?.firstName);
-
-    if (existingProfile?.name) {
-      console.log("Setting firstName from profile:", existingProfile.name);
-      setFirstName(existingProfile.name);
-    } else if (user?.firstName) {
-      console.log("Setting firstName from Clerk:", user.firstName);
+    if (user?.firstName) {
       setFirstName(user.firstName);
     }
-  }, [existingProfile?.name, user?.firstName]);
+  }, [user?.firstName]);
 
-  // Get the current name for placeholder
-  const currentName = existingProfile?.name || user?.firstName || "";
   const placeholderText = "Your name";
-
-  console.log("Current firstName state:", firstName);
-  console.log("Current placeholderText:", placeholderText);
 
   const handleSave = async () => {
     if (!firstName.trim()) {
@@ -59,18 +39,12 @@ export default function ProfileSetupScreen() {
       return;
     }
 
+    setIsLoading(true);
     try {
-      await upsertProfile.mutateAsync({ name: firstName.trim() });
-
-      // Also update Clerk profile for consistency
-      try {
-        await user?.update({
-          firstName: firstName.trim(),
-        });
-      } catch (clerkError) {
-        // Continue even if Clerk update fails - Supabase is our source of truth
-        console.warn("Failed to update Clerk profile:", clerkError);
-      }
+      // Update Clerk profile only
+      await user?.update({
+        firstName: firstName.trim(),
+      });
 
       Alert.alert("Success!", "Your profile has been updated", [
         { text: "OK", onPress: () => router.back() },
@@ -78,20 +52,18 @@ export default function ProfileSetupScreen() {
     } catch (error: any) {
       console.error("Profile update error:", error);
       Alert.alert("Error", error.message || "Failed to update profile");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleSkip = () => {
-    router.back();
-  };
-
-  const isLoading = upsertProfile.isPending;
+  const [isLoading, setIsLoading] = useState(false);
 
   return (
     <SafeAreaView
       style={[
         styles.container,
-        { backgroundColor: Colors[colorScheme ?? "light"].background }
+        { backgroundColor: Colors[colorScheme ?? "light"].background },
       ]}
     >
       <KeyboardAvoidingView
@@ -110,30 +82,21 @@ export default function ProfileSetupScreen() {
               ← Back
             </ThemedText>
           </Pressable>
-          <Text
-            variant="h5"
-            style={{ color: Colors[colorScheme ?? "light"].text }}
-          >
-            Complete Your Profile
-          </Text>
-          <Pressable onPress={handleSkip}>
-            <ThemedText style={[styles.skipText, { color: Colors.light.gradientStart }]}>Skip</ThemedText>
-          </Pressable>
         </View>
 
         {/* Content */}
         <View style={styles.content}>
           <View style={styles.iconContainer}>
             <View style={styles.iconBackground}>
-              <ThemedText style={styles.icon}>✨</ThemedText>
+              <SparkleIcon size={32} color="#FFFFFF" />
             </View>
           </View>
 
           <H3
-            style={{ 
+            style={{
               color: Colors[colorScheme ?? "light"].textSecondary,
-              textAlign: "center", 
-              marginBottom: 40 
+              textAlign: "center",
+              marginBottom: 40,
             }}
           >
             What should our AI-buddy call you?
@@ -146,14 +109,15 @@ export default function ProfileSetupScreen() {
                 style={[
                   styles.input,
                   {
-                    backgroundColor: Colors[colorScheme ?? "light"].cardBackground,
+                    backgroundColor:
+                      Colors[colorScheme ?? "light"].cardBackground,
                     color: Colors[colorScheme ?? "light"].text,
                     borderColor: Colors[colorScheme ?? "light"].border,
-                    textAlign: firstName ? "center" : "left",
+                    textAlign: "center",
                   },
                 ]}
                 placeholder={firstName ? "" : placeholderText}
-                placeholderTextColor={isDark ? Colors.dark.textTertiary : Colors.light.textTertiary}
+                placeholderTextColor={Colors.dark.textTertiary}
                 value={firstName}
                 onChangeText={setFirstName}
                 autoComplete="given-name"
@@ -206,10 +170,6 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   backText: {
-    fontSize: 16,
-    fontWeight: "500",
-  },
-  skipText: {
     fontSize: 16,
     fontWeight: "500",
   },

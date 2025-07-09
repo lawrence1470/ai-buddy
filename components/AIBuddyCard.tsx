@@ -1,19 +1,12 @@
+import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { AIBuddy } from "@/services/aiBuddyService";
 import { TTSService } from "@/services/ttsService";
-import { LinearGradient } from "expo-linear-gradient";
-import React, { useRef, useState } from "react";
-import {
-  Animated,
-  Platform,
-  Pressable,
-  StyleSheet,
-  View,
-} from "react-native";
-import Orb from "./Orb";
-import { Text, H5 } from "./typography";
 import { Ionicons } from "@expo/vector-icons";
-import { Colors } from "@/constants/Colors";
+import React, { useRef, useState } from "react";
+import { Animated, Platform, Pressable, StyleSheet, View } from "react-native";
+import Orb from "./Orb";
+import { H5, Text } from "./typography";
 
 interface AIBuddyCardProps {
   buddy: AIBuddy;
@@ -21,16 +14,15 @@ interface AIBuddyCardProps {
   isSelected?: boolean;
 }
 
-
 export default function AIBuddyCard({
   buddy,
   onPress,
   isSelected = false,
 }: AIBuddyCardProps) {
   const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const isDark = false; // Force light mode as per useColorScheme hook
   const [isPlaying, setIsPlaying] = useState(false);
-  
+
   // Animation values
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
@@ -105,12 +97,17 @@ export default function AIBuddyCard({
   };
 
   const getGradientColors = (): [string, string] => {
-    return [Colors[colorScheme ?? "light"].gradientStart, Colors[colorScheme ?? "light"].gradientEnd];
+    // Use backend color scheme if available, otherwise fallback to constants
+    if (buddy.avatar?.color_scheme && buddy.avatar.color_scheme.length >= 2) {
+      return [buddy.avatar.color_scheme[0], buddy.avatar.color_scheme[1]];
+    }
+    // Since colorScheme is always 'light', use light theme
+    return [Colors.light.gradientStart, Colors.light.gradientEnd];
   };
 
   const glowOpacity = glowAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, 0.4],
+    outputRange: [0, 0.15],
   });
 
   return (
@@ -126,10 +123,7 @@ export default function AIBuddyCard({
         onPress={handlePress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
-        style={({ pressed }) => [
-          styles.pressable,
-          pressed && styles.pressed,
-        ]}
+        style={({ pressed }) => [styles.pressable, pressed && styles.pressed]}
       >
         {/* Glow effect for selected state */}
         {isSelected && (
@@ -138,7 +132,7 @@ export default function AIBuddyCard({
               styles.glowEffect,
               {
                 opacity: glowOpacity,
-                backgroundColor: getGradientColors()[0],
+                backgroundColor: Colors.light.tint,
               },
             ]}
           />
@@ -148,13 +142,15 @@ export default function AIBuddyCard({
         <View style={[styles.container, isDark && styles.containerDark]}>
           {/* Gradient background */}
 
-          {/* Gradient accent border for selected state */}
+          {/* Consistent selection border */}
           {isSelected && (
-            <LinearGradient
-              colors={getGradientColors()}
-              style={styles.selectedBorder}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
+            <View
+              style={[
+                styles.selectedBorder,
+                {
+                  backgroundColor: Colors.light.tint,
+                },
+              ]}
             />
           )}
 
@@ -162,18 +158,14 @@ export default function AIBuddyCard({
           <View style={styles.content}>
             {/* Left side - Orb */}
             <View style={styles.orbContainer}>
-              {(() => {
-                return (
-                  <Orb
-                    size={56}
-                    colors={getGradientColors()}
-                    color={Colors[colorScheme ?? "light"].gradientPink}
-                    animated={true}
-                    isSpeaking={isPlaying}
-                  />
-                );
-              })()}
-              
+              <Orb
+                size={56}
+                colors={getGradientColors()}
+                color={getGradientColors()[0]}
+                animated={true}
+                isSpeaking={isPlaying}
+              />
+
               {/* Selected indicator */}
               {isSelected && (
                 <View style={styles.selectedBadge}>
@@ -192,7 +184,7 @@ export default function AIBuddyCard({
               >
                 {buddy.name}
               </H5>
-              
+
               <View style={styles.infoRow}>
                 {buddy.personality?.mbti_type && (
                   <Text
@@ -223,11 +215,16 @@ export default function AIBuddyCard({
                 styles.playButton,
                 isPlaying && styles.playButtonActive,
                 {
-                  backgroundColor: isDark ? "rgba(255, 183, 210, 0.1)" : "rgba(255, 183, 210, 0.2)",
+                  backgroundColor: isDark
+                    ? "rgba(255, 183, 210, 0.1)"
+                    : "rgba(255, 183, 210, 0.2)",
                 },
               ]}
               onPress={handlePlayVoice}
-              disabled={!(buddy.voice as any)?.elevenlabs_voice_id && !(buddy.voice as any)?.voice_id}
+              disabled={
+                !(buddy.voice as any)?.elevenlabs_voice_id &&
+                !(buddy.voice as any)?.voice_id
+              }
             >
               <Ionicons
                 name={isPlaying ? "volume-high" : "play"}
@@ -255,12 +252,12 @@ const styles = StyleSheet.create({
   },
   glowEffect: {
     position: "absolute",
-    top: -8,
-    left: -8,
-    right: -8,
-    bottom: -8,
-    borderRadius: 28,
-    opacity: 0.3,
+    top: -4,
+    left: -4,
+    right: -4,
+    bottom: -4,
+    borderRadius: 24,
+    opacity: 0.2,
   },
   container: {
     borderRadius: 20,
@@ -284,12 +281,12 @@ const styles = StyleSheet.create({
   },
   selectedBorder: {
     position: "absolute",
-    top: -2,
-    left: -2,
-    right: -2,
-    bottom: -2,
-    borderRadius: 22,
-    borderWidth: 3,
+    top: -1,
+    left: -1,
+    right: -1,
+    bottom: -1,
+    borderRadius: 21,
+    borderWidth: 2,
   },
   content: {
     flexDirection: "row",
